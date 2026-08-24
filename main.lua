@@ -1,7 +1,5 @@
-loadstring([[
 --==================================================
--- TELEPORT GUI
--- Loadstring Version
+-- TELEPORT GUI - TRANSPARENT BACKGROUND
 --==================================================
 
 local Players = game:GetService("Players")
@@ -28,6 +26,10 @@ local CONFIG = {
     BorderColor = Color3.fromRGB(77, 179, 255),
     TitleColor = Color3.fromRGB(51, 51, 64),
     MaxHistory = 5,
+    
+    -- NEW: Transparency settings
+    MainFrameTransparency = 1,  -- 0 = solid, 0.5 = half, 1 = invisible
+    ShowBorder = true,          -- Show border around GUI
 }
 
 --==================================================
@@ -40,25 +42,27 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 --==================================================
--- MAIN FRAME
+-- MAIN FRAME (Transparent)
 --==================================================
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.fromOffset(CONFIG.WindowWidth, CONFIG.WindowHeight)
 mainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
-mainFrame.BackgroundColor3 = CONFIG.BackgroundColor
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black base
+mainFrame.BackgroundTransparency = CONFIG.MainFrameTransparency  -- Set transparency
+mainFrame.BorderSizePixel = CONFIG.ShowBorder and 2 or 0
 mainFrame.BorderColor3 = CONFIG.BorderColor
-mainFrame.BorderSizePixel = 2
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = screenGui
 
 --==================================================
--- TITLE BAR
+-- TITLE BAR (Semi-transparent)
 --==================================================
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 36)
 titleBar.BackgroundColor3 = CONFIG.TitleColor
+titleBar.BackgroundTransparency = 0.3  -- Keep title bar slightly visible
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
@@ -77,6 +81,7 @@ local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.fromOffset(40, 36)
 closeButton.Position = UDim2.new(1, -40, 0, 0)
 closeButton.BackgroundColor3 = Color3.fromRGB(190, 50, 50)
+closeButton.BackgroundTransparency = 0.3  -- Semi-transparent close button
 closeButton.Text = "✕"
 closeButton.TextColor3 = Color3.new(1, 1, 1)
 closeButton.TextSize = 18
@@ -126,6 +131,7 @@ local inputBox = Instance.new("TextBox")
 inputBox.Size = UDim2.new(1, -32, 0, 34)
 inputBox.Position = UDim2.fromOffset(16, 88)
 inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 62)
+inputBox.BackgroundTransparency = 0.3  -- Semi-transparent input
 inputBox.BorderColor3 = Color3.fromRGB(80, 80, 95)
 inputBox.TextColor3 = Color3.new(1, 1, 1)
 inputBox.PlaceholderText = "0, 10, 0"
@@ -145,6 +151,7 @@ local function createButton(text, position, size, color)
     button.Size = size
     button.Position = position
     button.BackgroundColor3 = color
+    button.BackgroundTransparency = 0.2  -- Slightly transparent buttons
     button.BorderSizePixel = 0
     button.Text = text
     button.TextColor3 = Color3.new(1, 1, 1)
@@ -224,6 +231,7 @@ for i = 1, CONFIG.MaxHistory do
     button.Size = UDim2.new(1 / CONFIG.MaxHistory, -4, 1, 0)
     button.Position = UDim2.new((i - 1) / CONFIG.MaxHistory, 2, 0, 0)
     button.BackgroundColor3 = Color3.fromRGB(45, 85, 120)
+    button.BackgroundTransparency = 0.3
     button.BorderSizePixel = 0
     button.Text = ""
     button.TextColor3 = Color3.new(1, 1, 1)
@@ -382,6 +390,7 @@ icon.Name = "TeleportIcon"
 icon.Size = UDim2.fromOffset(CONFIG.IconSize, CONFIG.IconSize)
 icon.Position = UDim2.new(0.02, 0, 0.5, -22)
 icon.BackgroundColor3 = Color3.fromRGB(45, 115, 210)
+icon.BackgroundTransparency = 0.1
 icon.BorderColor3 = CONFIG.BorderColor
 icon.BorderSizePixel = 2
 icon.Text = "🚀"
@@ -492,9 +501,8 @@ UserInputService.InputChanged:Connect(function(input)
     )
 end)
 
-print("🚀 Teleport GUI loaded")
+print("🚀 Teleport GUI loaded (Transparent)")
 print("Ctrl+G = Get Position")
 print("Ctrl+T = Teleport")
 print("Ctrl+R = Reset")
 print("Ctrl+H = Toggle GUI")
-]])()
