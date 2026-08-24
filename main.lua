@@ -27,7 +27,7 @@ local CONFIG = {
     BorderColor = Color3.fromRGB(77, 179, 255),
     TitleColor = Color3.fromRGB(51, 51, 64),
     MaxHistory = 5,
-    MainFrameTransparency = 1,
+    MainFrameTransparency = 0.5, -- 0 = visible, 1 = nearly invisible
     ShowBorder = true,
 }
 
