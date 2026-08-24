@@ -1,5 +1,6 @@
 --==================================================
--- TELEPORT GUI - TRANSPARENT BACKGROUND
+-- TELEPORT GUI - HISTORY DOES NOT REWRITE INPUT
+-- Clicking history only teleports, doesn't change input
 --==================================================
 
 local Players = game:GetService("Players")
@@ -26,10 +27,8 @@ local CONFIG = {
     BorderColor = Color3.fromRGB(77, 179, 255),
     TitleColor = Color3.fromRGB(51, 51, 64),
     MaxHistory = 5,
-    
-    -- NEW: Transparency settings
-    MainFrameTransparency = 0.5,  -- 0 = solid, 0.5 = half, 1 = invisible
-    ShowBorder = true,          -- Show border around GUI
+    MainFrameTransparency = 1,
+    ShowBorder = true,
 }
 
 --==================================================
@@ -42,27 +41,27 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 --==================================================
--- MAIN FRAME (Transparent)
+-- MAIN FRAME
 --==================================================
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.fromOffset(CONFIG.WindowWidth, CONFIG.WindowHeight)
 mainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
-mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Black base
-mainFrame.BackgroundTransparency = CONFIG.MainFrameTransparency  -- Set transparency
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = CONFIG.MainFrameTransparency
 mainFrame.BorderSizePixel = CONFIG.ShowBorder and 2 or 0
 mainFrame.BorderColor3 = CONFIG.BorderColor
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = screenGui
 
 --==================================================
--- TITLE BAR (Semi-transparent)
+-- TITLE BAR
 --==================================================
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 36)
-titleBar.BackgroundColor3 = CONFIG.TitleColor
-titleBar.BackgroundTransparency = 0.3  -- Keep title bar slightly visible
+titleBar.BackgroundColor3 = Color3.fromRGB(51, 51, 64)
+titleBar.BackgroundTransparency = 0.3
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
@@ -81,7 +80,7 @@ local closeButton = Instance.new("TextButton")
 closeButton.Size = UDim2.fromOffset(40, 36)
 closeButton.Position = UDim2.new(1, -40, 0, 0)
 closeButton.BackgroundColor3 = Color3.fromRGB(190, 50, 50)
-closeButton.BackgroundTransparency = 0.3  -- Semi-transparent close button
+closeButton.BackgroundTransparency = 0.3
 closeButton.Text = "✕"
 closeButton.TextColor3 = Color3.new(1, 1, 1)
 closeButton.TextSize = 18
@@ -131,7 +130,7 @@ local inputBox = Instance.new("TextBox")
 inputBox.Size = UDim2.new(1, -32, 0, 34)
 inputBox.Position = UDim2.fromOffset(16, 88)
 inputBox.BackgroundColor3 = Color3.fromRGB(50, 50, 62)
-inputBox.BackgroundTransparency = 0.3  -- Semi-transparent input
+inputBox.BackgroundTransparency = 0.3
 inputBox.BorderColor3 = Color3.fromRGB(80, 80, 95)
 inputBox.TextColor3 = Color3.new(1, 1, 1)
 inputBox.PlaceholderText = "0, 10, 0"
@@ -151,7 +150,7 @@ local function createButton(text, position, size, color)
     button.Size = size
     button.Position = position
     button.BackgroundColor3 = color
-    button.BackgroundTransparency = 0.2  -- Slightly transparent buttons
+    button.BackgroundTransparency = 0.2
     button.BorderSizePixel = 0
     button.Text = text
     button.TextColor3 = Color3.new(1, 1, 1)
@@ -243,7 +242,7 @@ for i = 1, CONFIG.MaxHistory do
 end
 
 --==================================================
--- HISTORY DATA
+-- HISTORY DATA (NO REORDERING, NO INPUT REWRITE)
 --==================================================
 
 local history = {}
@@ -261,18 +260,26 @@ local function updateHistory()
     end
 end
 
+-- Add to history (adds to the END, no sorting)
 local function addHistory(text)
     if not text or text == "" then return end
+    
+    -- Check if already exists (remove duplicate)
     for i, value in ipairs(history) do
         if value == text then
             table.remove(history, i)
             break
         end
     end
-    table.insert(history, 1, text)
+    
+    -- Add to the END of the list
+    table.insert(history, text)
+    
+    -- Keep only the last MaxHistory entries
     while #history > CONFIG.MaxHistory do
-        table.remove(history)
+        table.remove(history, 1)  -- Remove oldest (first)
     end
+    
     updateHistory()
 end
 
@@ -316,8 +323,24 @@ local function getPosition()
 end
 
 --==================================================
--- TELEPORT
+-- TELEPORT (WITHOUT ADDING TO HISTORY)
 --==================================================
+
+local function teleportSilent(position)
+    -- This teleports without adding to history
+    local char = player.Character
+    if not char then
+        status("No character!", true)
+        return false
+    end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not root then
+        status("No HumanoidRootPart!", true)
+        return false
+    end
+    char:PivotTo(CFrame.new(position))
+    return true
+end
 
 local function teleport()
     local position = parseCoordinates(inputBox.Text)
@@ -325,19 +348,32 @@ local function teleport()
         status("Invalid format! Use X, Y, Z", true)
         return
     end
-    local character = player.Character
-    if not character then
-        status("No character!", true)
+    
+    local success = teleportSilent(position)
+    if success then
+        addHistory(inputBox.Text)
+        status("Teleported! ✅")
+    end
+end
+
+--==================================================
+-- TELEPORT FROM HISTORY (DOES NOT REWRITE INPUT)
+--==================================================
+
+local function teleportFromHistory(coordText)
+    local position = parseCoordinates(coordText)
+    if not position then
+        status("Invalid history entry!", true)
         return
     end
-    local root = character:FindFirstChild("HumanoidRootPart")
-    if not root then
-        status("No HumanoidRootPart!", true)
-        return
+    
+    -- Teleport WITHOUT changing input box
+    local success = teleportSilent(position)
+    if success then
+        -- Don't add to history again (avoid duplicates)
+        -- Don't change inputBox.Text
+        status("Teleported to " .. coordText .. " ✅")
     end
-    character:PivotTo(CFrame.new(position))
-    addHistory(inputBox.Text)
-    status("Teleported! ✅")
 end
 
 --==================================================
@@ -354,20 +390,28 @@ end)
 
 clearButton.MouseButton1Click:Connect(function()
     inputBox.Text = ""
-    table.clear(history)
+    history = {}
     updateHistory()
     status("History cleared!")
 end)
 
 --==================================================
--- HISTORY EVENTS
+-- HISTORY EVENTS (DOES NOT REWRITE INPUT)
 --==================================================
 
 for _, button in ipairs(historyButtons) do
     button.MouseButton1Click:Connect(function()
         if button.Text == "" then return end
-        inputBox.Text = button.Text
-        teleport()
+        
+        -- Store the current input text
+        local currentInput = inputBox.Text
+        
+        -- Teleport using history coordinate
+        teleportFromHistory(button.Text)
+        
+        -- Restore the input text (if you want to keep it)
+        -- OR leave it as is (it never changed)
+        -- inputBox.Text = currentInput  -- Uncomment if you want to preserve
     end)
 end
 
@@ -501,7 +545,7 @@ UserInputService.InputChanged:Connect(function(input)
     )
 end)
 
-print("🚀 Teleport GUI loaded (Transparent)")
+print("🚀 Teleport GUI loaded (History doesn't rewrite input)")
 print("Ctrl+G = Get Position")
 print("Ctrl+T = Teleport")
 print("Ctrl+R = Reset")
