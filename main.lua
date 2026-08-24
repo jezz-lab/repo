@@ -28,7 +28,7 @@ local CONFIG = {
     MaxHistory = 5,
     
     -- NEW: Transparency settings
-    MainFrameTransparency = 1,  -- 0 = solid, 0.5 = half, 1 = invisible
+    MainFrameTransparency = 0.5,  -- 0 = solid, 0.5 = half, 1 = invisible
     ShowBorder = true,          -- Show border around GUI
 }
 
