@@ -1,7 +1,7 @@
+loadstring([[
 --==================================================
 -- TELEPORT GUI
--- Roblox Studio / LocalScript
--- Place in StarterPlayer > StarterPlayerScripts
+-- Loadstring Version
 --==================================================
 
 local Players = game:GetService("Players")
@@ -10,28 +10,25 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Remove previous copy
+local oldGui = playerGui:FindFirstChild("TeleportGUI")
+if oldGui then
+    oldGui:Destroy()
+end
+
 --==================================================
 -- CONFIG
 --==================================================
 
 local CONFIG = {
-	WindowWidth = 320,
-	WindowHeight = 240,
-
-	IconSize = 45,
-
-	BackgroundColor = Color3.fromRGB(31, 31, 38),
-	BorderColor = Color3.fromRGB(77, 179, 255),
-	TitleColor = Color3.fromRGB(51, 51, 64),
-
-	MaxHistory = 5,
+    WindowWidth = 320,
+    WindowHeight = 240,
+    IconSize = 45,
+    BackgroundColor = Color3.fromRGB(31, 31, 38),
+    BorderColor = Color3.fromRGB(77, 179, 255),
+    TitleColor = Color3.fromRGB(51, 51, 64),
+    MaxHistory = 5,
 }
-
--- Remove previous copy
-local oldGui = playerGui:FindFirstChild("TeleportGUI")
-if oldGui then
-	oldGui:Destroy()
-end
 
 --==================================================
 -- SCREEN GUI
@@ -40,7 +37,6 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "TeleportGUI"
 screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
 --==================================================
@@ -48,11 +44,7 @@ screenGui.Parent = playerGui
 --==================================================
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.fromOffset(
-	CONFIG.WindowWidth,
-	CONFIG.WindowHeight
-)
+mainFrame.Size = UDim2.fromOffset(CONFIG.WindowWidth, CONFIG.WindowHeight)
 mainFrame.Position = UDim2.new(0.5, -160, 0.5, -120)
 mainFrame.BackgroundColor3 = CONFIG.BackgroundColor
 mainFrame.BorderColor3 = CONFIG.BorderColor
@@ -92,7 +84,7 @@ closeButton.BorderSizePixel = 0
 closeButton.Parent = titleBar
 
 closeButton.MouseButton1Click:Connect(function()
-	mainFrame.Visible = false
+    mainFrame.Visible = false
 end)
 
 --==================================================
@@ -111,13 +103,8 @@ statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = mainFrame
 
 local function status(text, errorMessage)
-	statusLabel.Text = "● " .. text
-
-	if errorMessage then
-		statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-	else
-		statusLabel.TextColor3 = Color3.fromRGB(130, 255, 130)
-	end
+    statusLabel.Text = "● " .. text
+    statusLabel.TextColor3 = errorMessage and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(130, 255, 130)
 end
 
 --==================================================
@@ -154,21 +141,17 @@ inputBox.Parent = mainFrame
 --==================================================
 
 local function createButton(text, position, size, color)
-	local button = Instance.new("TextButton")
-
-	button.Size = size
-	button.Position = position
-	button.BackgroundColor3 = color
-	button.BorderSizePixel = 0
-
-	button.Text = text
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.TextSize = 12
-	button.Font = Enum.Font.GothamBold
-
-	button.Parent = mainFrame
-
-	return button
+    local button = Instance.new("TextButton")
+    button.Size = size
+    button.Position = position
+    button.BackgroundColor3 = color
+    button.BorderSizePixel = 0
+    button.Text = text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 12
+    button.Font = Enum.Font.GothamBold
+    button.Parent = mainFrame
+    return button
 end
 
 --==================================================
@@ -176,17 +159,17 @@ end
 --==================================================
 
 local getPositionButton = createButton(
-	"📍 Get Position",
-	UDim2.fromOffset(16, 130),
-	UDim2.fromOffset(137, 34),
-	Color3.fromRGB(45, 115, 185)
+    "📍 Get Position",
+    UDim2.fromOffset(16, 130),
+    UDim2.fromOffset(137, 34),
+    Color3.fromRGB(45, 115, 185)
 )
 
 local teleportButton = createButton(
-	"🚀 Teleport",
-	UDim2.fromOffset(167, 130),
-	UDim2.fromOffset(137, 34),
-	Color3.fromRGB(35, 165, 70)
+    "🚀 Teleport",
+    UDim2.fromOffset(167, 130),
+    UDim2.fromOffset(137, 34),
+    Color3.fromRGB(35, 165, 70)
 )
 
 --==================================================
@@ -194,24 +177,24 @@ local teleportButton = createButton(
 --==================================================
 
 local copyButton = createButton(
-	"📋 Copy",
-	UDim2.fromOffset(16, 170),
-	UDim2.fromOffset(88, 28),
-	Color3.fromRGB(50, 100, 145)
+    "📋 Copy",
+    UDim2.fromOffset(16, 170),
+    UDim2.fromOffset(88, 28),
+    Color3.fromRGB(50, 100, 145)
 )
 
 local resetButton = createButton(
-	"🔄 Reset",
-	UDim2.fromOffset(116, 170),
-	UDim2.fromOffset(88, 28),
-	Color3.fromRGB(145, 85, 35)
+    "🔄 Reset",
+    UDim2.fromOffset(116, 170),
+    UDim2.fromOffset(88, 28),
+    Color3.fromRGB(145, 85, 35)
 )
 
 local clearButton = createButton(
-	"🗑 Clear",
-	UDim2.fromOffset(216, 170),
-	UDim2.fromOffset(88, 28),
-	Color3.fromRGB(145, 45, 45)
+    "🗑 Clear",
+    UDim2.fromOffset(216, 170),
+    UDim2.fromOffset(88, 28),
+    Color3.fromRGB(145, 45, 45)
 )
 
 --==================================================
@@ -236,36 +219,19 @@ historyFrame.BackgroundTransparency = 1
 historyFrame.Parent = mainFrame
 
 local historyButtons = {}
-
 for i = 1, CONFIG.MaxHistory do
-	local button = Instance.new("TextButton")
-
-	button.Size = UDim2.new(
-		1 / CONFIG.MaxHistory,
-		-4,
-		1,
-		0
-	)
-
-	button.Position = UDim2.new(
-		(i - 1) / CONFIG.MaxHistory,
-		2,
-		0,
-		0
-	)
-
-	button.BackgroundColor3 = Color3.fromRGB(45, 85, 120)
-	button.BorderSizePixel = 0
-
-	button.Text = ""
-	button.TextColor3 = Color3.new(1, 1, 1)
-	button.TextSize = 9
-	button.Font = Enum.Font.Gotham
-
-	button.Visible = false
-	button.Parent = historyFrame
-
-	historyButtons[i] = button
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1 / CONFIG.MaxHistory, -4, 1, 0)
+    button.Position = UDim2.new((i - 1) / CONFIG.MaxHistory, 2, 0, 0)
+    button.BackgroundColor3 = Color3.fromRGB(45, 85, 120)
+    button.BorderSizePixel = 0
+    button.Text = ""
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 9
+    button.Font = Enum.Font.Gotham
+    button.Visible = false
+    button.Parent = historyFrame
+    historyButtons[i] = button
 end
 
 --==================================================
@@ -275,38 +241,31 @@ end
 local history = {}
 
 local function updateHistory()
-	for i = 1, CONFIG.MaxHistory do
-		local button = historyButtons[i]
-
-		if history[i] then
-			button.Text = history[i]
-			button.Visible = true
-		else
-			button.Text = ""
-			button.Visible = false
-		end
-	end
+    for i = 1, CONFIG.MaxHistory do
+        local button = historyButtons[i]
+        if history[i] then
+            button.Text = history[i]
+            button.Visible = true
+        else
+            button.Text = ""
+            button.Visible = false
+        end
+    end
 end
 
 local function addHistory(text)
-	if not text or text == "" then
-		return
-	end
-
-	for i, value in ipairs(history) do
-		if value == text then
-			table.remove(history, i)
-			break
-		end
-	end
-
-	table.insert(history, 1, text)
-
-	while #history > CONFIG.MaxHistory do
-		table.remove(history)
-	end
-
-	updateHistory()
+    if not text or text == "" then return end
+    for i, value in ipairs(history) do
+        if value == text then
+            table.remove(history, i)
+            break
+        end
+    end
+    table.insert(history, 1, text)
+    while #history > CONFIG.MaxHistory do
+        table.remove(history)
+    end
+    updateHistory()
 end
 
 --==================================================
@@ -314,33 +273,16 @@ end
 --==================================================
 
 local function parseCoordinates(text)
-	if not text or text == "" then
-		return nil
-	end
-
-	text = text:gsub("%s+", "")
-
-	local values = {}
-
-	for value in string.gmatch(text, "[^,]+") do
-		local number = tonumber(value)
-
-		if not number then
-			return nil
-		end
-
-		table.insert(values, number)
-	end
-
-	if #values ~= 3 then
-		return nil
-	end
-
-	return Vector3.new(
-		values[1],
-		values[2],
-		values[3]
-	)
+    if not text or text == "" then return nil end
+    text = text:gsub("%s+", "")
+    local values = {}
+    for value in string.gmatch(text, "[^,]+") do
+        local number = tonumber(value)
+        if not number then return nil end
+        table.insert(values, number)
+    end
+    if #values ~= 3 then return nil end
+    return Vector3.new(values[1], values[2], values[3])
 end
 
 --==================================================
@@ -348,34 +290,21 @@ end
 --==================================================
 
 local function getPosition()
-	local character = player.Character
-
-	if not character then
-		status("No character!", true)
-		return
-	end
-
-	local root = character:FindFirstChild("HumanoidRootPart")
-
-	if not root then
-		status("No HumanoidRootPart!", true)
-		return
-	end
-
-	local position = root.Position
-
-	local text = string.format(
-		"%.1f, %.1f, %.1f",
-		position.X,
-		position.Y,
-		position.Z
-	)
-
-	inputBox.Text = text
-
-	addHistory(text)
-
-	status("Position loaded!")
+    local character = player.Character
+    if not character then
+        status("No character!", true)
+        return
+    end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        status("No HumanoidRootPart!", true)
+        return
+    end
+    local position = root.Position
+    local text = string.format("%.1f, %.1f, %.1f", position.X, position.Y, position.Z)
+    inputBox.Text = text
+    addHistory(text)
+    status("Position loaded!")
 end
 
 --==================================================
@@ -383,34 +312,24 @@ end
 --==================================================
 
 local function teleport()
-	local position = parseCoordinates(inputBox.Text)
-
-	if not position then
-		status("Invalid format! Use X, Y, Z", true)
-		return
-	end
-
-	local character = player.Character
-
-	if not character then
-		status("No character!", true)
-		return
-	end
-
-	local root = character:FindFirstChild("HumanoidRootPart")
-
-	if not root then
-		status("No HumanoidRootPart!", true)
-		return
-	end
-
-	-- For an experience you control, this can be
-	-- replaced with a RemoteEvent/server validation.
-	character:PivotTo(CFrame.new(position))
-
-	addHistory(inputBox.Text)
-
-	status("Teleported! ✅")
+    local position = parseCoordinates(inputBox.Text)
+    if not position then
+        status("Invalid format! Use X, Y, Z", true)
+        return
+    end
+    local character = player.Character
+    if not character then
+        status("No character!", true)
+        return
+    end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        status("No HumanoidRootPart!", true)
+        return
+    end
+    character:PivotTo(CFrame.new(position))
+    addHistory(inputBox.Text)
+    status("Teleported! ✅")
 end
 
 --==================================================
@@ -418,19 +337,18 @@ end
 --==================================================
 
 getPositionButton.MouseButton1Click:Connect(getPosition)
-
 teleportButton.MouseButton1Click:Connect(teleport)
 
 resetButton.MouseButton1Click:Connect(function()
-	inputBox.Text = ""
-	status("Reset")
+    inputBox.Text = ""
+    status("Reset")
 end)
 
 clearButton.MouseButton1Click:Connect(function()
-	inputBox.Text = ""
-	table.clear(history)
-	updateHistory()
-	status("History cleared!")
+    inputBox.Text = ""
+    table.clear(history)
+    updateHistory()
+    status("History cleared!")
 end)
 
 --==================================================
@@ -438,14 +356,11 @@ end)
 --==================================================
 
 for _, button in ipairs(historyButtons) do
-	button.MouseButton1Click:Connect(function()
-		if button.Text == "" then
-			return
-		end
-
-		inputBox.Text = button.Text
-		teleport()
-	end)
+    button.MouseButton1Click:Connect(function()
+        if button.Text == "" then return end
+        inputBox.Text = button.Text
+        teleport()
+    end)
 end
 
 --==================================================
@@ -453,9 +368,9 @@ end
 --==================================================
 
 inputBox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then
-		teleport()
-	end
+    if enterPressed then
+        teleport()
+    end
 end)
 
 --==================================================
@@ -464,26 +379,14 @@ end)
 
 local icon = Instance.new("TextButton")
 icon.Name = "TeleportIcon"
-icon.Size = UDim2.fromOffset(
-	CONFIG.IconSize,
-	CONFIG.IconSize
-)
-
-icon.Position = UDim2.new(
-	0.02,
-	0,
-	0.5,
-	-22
-)
-
+icon.Size = UDim2.fromOffset(CONFIG.IconSize, CONFIG.IconSize)
+icon.Position = UDim2.new(0.02, 0, 0.5, -22)
 icon.BackgroundColor3 = Color3.fromRGB(45, 115, 210)
 icon.BorderColor3 = CONFIG.BorderColor
 icon.BorderSizePixel = 2
-
 icon.Text = "🚀"
 icon.TextSize = 21
 icon.TextColor3 = Color3.new(1, 1, 1)
-
 icon.Font = Enum.Font.GothamBold
 icon.Parent = screenGui
 
@@ -497,72 +400,40 @@ local startPosition
 local moved = false
 
 icon.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch then
-		return
-	end
-
-	dragging = true
-	moved = false
-
-	dragStart = input.Position
-	startPosition = icon.Position
-
-	input.Changed:Connect(function()
-		if input.UserInputState == Enum.UserInputState.End then
-			dragging = false
-		end
-	end)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+    dragging = true
+    moved = false
+    dragStart = input.Position
+    startPosition = icon.Position
+    input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
+            dragging = false
+        end
+    end)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if not dragging then
-		return
-	end
-
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement
-		and input.UserInputType ~= Enum.UserInputType.Touch then
-		return
-	end
-
-	local delta = input.Position - dragStart
-
-	if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
-		moved = true
-	end
-
-	local camera = workspace.CurrentCamera
-
-	if not camera then
-		return
-	end
-
-	local viewport = camera.ViewportSize
-
-	local x = startPosition.X.Offset + delta.X
-	local y = startPosition.Y.Offset + delta.Y
-
-	x = math.clamp(
-		x,
-		0,
-		viewport.X - CONFIG.IconSize
-	)
-
-	y = math.clamp(
-		y,
-		0,
-		viewport.Y - CONFIG.IconSize
-	)
-
-	icon.Position = UDim2.fromOffset(x, y)
+    if not dragging then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+    local delta = input.Position - dragStart
+    if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
+        moved = true
+    end
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    local viewport = camera.ViewportSize
+    local x = math.clamp(startPosition.X.Offset + delta.X, 0, viewport.X - CONFIG.IconSize)
+    local y = math.clamp(startPosition.Y.Offset + delta.Y, 0, viewport.Y - CONFIG.IconSize)
+    icon.Position = UDim2.fromOffset(x, y)
 end)
 
 icon.MouseButton1Click:Connect(function()
-	if moved then
-		return
-	end
-
-	mainFrame.Visible = not mainFrame.Visible
+    if moved then return end
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
 --==================================================
@@ -570,32 +441,19 @@ end)
 --==================================================
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then
-		return
-	end
-
-	local ctrl =
-		UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
-		or
-		UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
-
-	if not ctrl then
-		return
-	end
-
-	if input.KeyCode == Enum.KeyCode.T then
-		teleport()
-
-	elseif input.KeyCode == Enum.KeyCode.G then
-		getPosition()
-
-	elseif input.KeyCode == Enum.KeyCode.R then
-		inputBox.Text = ""
-		status("Reset")
-
-	elseif input.KeyCode == Enum.KeyCode.H then
-		mainFrame.Visible = not mainFrame.Visible
-	end
+    if gameProcessed then return end
+    local ctrl = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
+    if not ctrl then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        teleport()
+    elseif input.KeyCode == Enum.KeyCode.G then
+        getPosition()
+    elseif input.KeyCode == Enum.KeyCode.R then
+        inputBox.Text = ""
+        status("Reset")
+    elseif input.KeyCode == Enum.KeyCode.H then
+        mainFrame.Visible = not mainFrame.Visible
+    end
 end)
 
 --==================================================
@@ -607,40 +465,31 @@ local windowDragStart
 local windowStartPosition
 
 titleBar.InputBegan:Connect(function(input)
-	if input.UserInputType ~= Enum.UserInputType.MouseButton1
-		and input.UserInputType ~= Enum.UserInputType.Touch then
-		return
-	end
-
-	windowDragging = true
-	windowDragStart = input.Position
-	windowStartPosition = mainFrame.Position
-
-	input.Changed:Connect(function()
-		if input.UserInputState == Enum.UserInputState.End then
-			windowDragging = false
-		end
-	end)
+    if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+    windowDragging = true
+    windowDragStart = input.Position
+    windowStartPosition = mainFrame.Position
+    input.Changed:Connect(function()
+        if input.UserInputState == Enum.UserInputState.End then
+            windowDragging = false
+        end
+    end)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if not windowDragging then
-		return
-	end
-
-	if input.UserInputType ~= Enum.UserInputType.MouseMovement
-		and input.UserInputType ~= Enum.UserInputType.Touch then
-		return
-	end
-
-	local delta = input.Position - windowDragStart
-
-	mainFrame.Position = UDim2.new(
-		windowStartPosition.X.Scale,
-		windowStartPosition.X.Offset + delta.X,
-		windowStartPosition.Y.Scale,
-		windowStartPosition.Y.Offset + delta.Y
-	)
+    if not windowDragging then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
+    local delta = input.Position - windowDragStart
+    mainFrame.Position = UDim2.new(
+        windowStartPosition.X.Scale,
+        windowStartPosition.X.Offset + delta.X,
+        windowStartPosition.Y.Scale,
+        windowStartPosition.Y.Offset + delta.Y
+    )
 end)
 
 print("🚀 Teleport GUI loaded")
@@ -648,3 +497,4 @@ print("Ctrl+G = Get Position")
 print("Ctrl+T = Teleport")
 print("Ctrl+R = Reset")
 print("Ctrl+H = Toggle GUI")
+]])()
