@@ -25,7 +25,7 @@ local TARGET_GAME_ID = 103050497819513  -- REPLACE WITH YOUR GAME ID
 if game.PlaceId ~= TARGET_GAME_ID then
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Wrong Game",
-        Text = "This script only works in the designated game.",
+        Text = "Hi. This script only works in the designated game.",
         Duration = 5
     })
     return
