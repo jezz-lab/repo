@@ -19,11 +19,11 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 --==================================================
 
 local TELEPORTS = {
-	["Easter's Base"] = Vector3.new(100, 50, 100),
-	["67's Base"] = Vector3.new(200, 50, 200),
-	["Pot Hotspot's Base"] = Vector3.new(300, 50, 300),
-	["Dragon Cannelloni's Base"] = Vector3.new(400, 50, 400),
-	["Cappuccino Assassino's Base"] = Vector3.new(500, 50, 500),
+	["Easter's Base"] = Vector3.new(4.4, -114.9, 215.3),
+	["67's Base"] = Vector3.new(-54.0, 5.0, 302.8),
+	["Pot Hotspot's Base"] = Vector3.new(54.5, 5.0, 372.8),
+	["Dragon Cannelloni's Base"] = Vector3.new(-56.8, 5.0, 232.5),
+	["Cappuccino Assassino's Base"] = Vector3.new(56.0, 5.0, 302.9),
 }
 
 --==================================================
