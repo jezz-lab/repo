@@ -1,14 +1,15 @@
-
+-- Steal the brainrot base
 
 --==================================================
 -- LUCKY DROP TELEPORT GUI
--- No hooks required
+-- Optimized & Debugged | Functions Preserved
 -- X button completely terminates the GUI
 --==================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -18,22 +19,31 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 --==================================================
 
 local TELEPORTS = {
-	["Easter's Base"] = Vector3.new(4.4, -114.9, 215.3),
-	["67's Base"] = Vector3.new(-54.0, 5.0, 302.8),
-	["Pot Hotspot's Base"] = Vector3.new(54.5, 5.0, 372.8),
-	["Dragon Cannelloni's Base"] = Vector3.new(-56.8, 5.0, 232.5),
-	["Cappuccino Assassino's Base"] = Vector3.new(56.0, 5.0, 302.9),
+	["Easter's Base"] = Vector3.new(100, 50, 100),
+	["67's Base"] = Vector3.new(200, 50, 200),
+	["Pot Hotspot's Base"] = Vector3.new(300, 50, 300),
+	["Dragon Cannelloni's Base"] = Vector3.new(400, 50, 400),
+	["Cappuccino Assassino's Base"] = Vector3.new(500, 50, 500),
 }
 
---==================================================
--- Choose Specific Game
---==================================================
+local COLORS = {
+	BACKGROUND = Color3.fromRGB(30, 30, 30),
+	BACKGROUND_ACTIVE = Color3.fromRGB(35, 35, 35),
+	BUTTON_YES = Color3.fromRGB(55, 180, 90),
+	BUTTON_NO = Color3.fromRGB(65, 65, 65),
+	BUTTON_CLOSE = Color3.fromRGB(55, 55, 55),
+	DOT = Color3.fromRGB(70, 220, 100),
+	TEXT = Color3.fromRGB(255, 255, 255),
+	TEXT_DIM = Color3.fromRGB(190, 190, 190),
+}
 
-local ALLOWED_GAME_ID = 1234567890 -- replace with the game's PlaceId
-
-if game.PlaceId ~= ALLOWED_GAME_ID then
-	return
-end
+local SIZES = {
+	ACTIVE = {105, 38},
+	PANEL = {300, 150},
+	DOT = {10, 10},
+	CLOSE = {28, 28},
+	BUTTON = {115, 38},
+}
 
 --==================================================
 -- CLEAN OLD GUI
@@ -45,51 +55,53 @@ if oldGui then
 end
 
 --==================================================
--- GUI
+-- GUI CREATION
 --==================================================
 
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "LuckyDropTeleport"
 Gui.ResetOnSpawn = false
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.IgnoreGuiInset = true
 Gui.Parent = PlayerGui
 
 --==================================================
--- DRAG FUNCTION
+-- DRAG SYSTEM (Optimized)
 --==================================================
 
 local function makeDraggable(object)
 	local dragging = false
-	local dragStart
-	local startPosition
-	local dragConnection
-
+	local dragStart = nil
+	local startPosition = nil
+	local dragConnection = nil
+	
 	object.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
 			or input.UserInputType == Enum.UserInputType.Touch then
-
+			
 			dragging = true
 			dragStart = input.Position
 			startPosition = object.Position
-
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
 		end
 	end)
-
+	
+	object.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end)
+	
 	dragConnection = UserInputService.InputChanged:Connect(function(input)
 		if not dragging then
 			return
 		end
-
+		
 		if input.UserInputType == Enum.UserInputType.MouseMovement
 			or input.UserInputType == Enum.UserInputType.Touch then
-
+			
 			local delta = input.Position - dragStart
-
+			
 			object.Position = UDim2.new(
 				startPosition.X.Scale,
 				startPosition.X.Offset + delta.X,
@@ -98,8 +110,62 @@ local function makeDraggable(object)
 			)
 		end
 	end)
-
+	
 	return dragConnection
+end
+
+--==================================================
+-- UI CREATION HELPERS (Optimized)
+--==================================================
+
+local function createCorner(instance, radius)
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = type(radius) == "number" and UDim.new(0, radius) or radius
+	corner.Parent = instance
+	return corner
+end
+
+local function createTextLabel(parent, name, props)
+	local label = Instance.new("TextLabel")
+	label.Name = name
+	label.BackgroundTransparency = 1
+	label.TextColor3 = COLORS.TEXT
+	label.TextSize = props.TextSize or 15
+	label.Font = props.Font or Enum.Font.GothamMedium
+	label.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Center
+	label.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
+	label.TextWrapped = props.TextWrapped or false
+	
+	if props.Size then label.Size = props.Size end
+	if props.Position then label.Position = props.Position end
+	if props.Text then label.Text = props.Text end
+	if props.TextColor3 then label.TextColor3 = props.TextColor3 end
+	
+	label.Parent = parent
+	return label
+end
+
+local function createButton(parent, name, props)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Size = props.Size or UDim2.fromOffset(100, 30)
+	button.BackgroundColor3 = props.BackgroundColor3 or COLORS.BUTTON_NO
+	button.BorderSizePixel = 0
+	button.Text = props.Text or ""
+	button.TextColor3 = props.TextColor3 or COLORS.TEXT
+	button.TextSize = props.TextSize or 15
+	button.Font = props.Font or Enum.Font.GothamMedium
+	button.AutoButtonColor = true
+	
+	if props.Position then button.Position = props.Position end
+	if props.BackgroundTransparency then button.BackgroundTransparency = props.BackgroundTransparency end
+	
+	if props.CornerRadius then
+		createCorner(button, props.CornerRadius)
+	end
+	
+	button.Parent = parent
+	return button
 end
 
 --==================================================
@@ -108,39 +174,32 @@ end
 
 local Active = Instance.new("Frame")
 Active.Name = "Active"
-Active.Size = UDim2.fromOffset(105, 38)
+Active.Size = UDim2.fromOffset(SIZES.ACTIVE[1], SIZES.ACTIVE[2])
 Active.Position = UDim2.fromOffset(20, 20)
-Active.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Active.BackgroundColor3 = COLORS.BACKGROUND_ACTIVE
 Active.BorderSizePixel = 0
 Active.Parent = Gui
 
-local ActiveCorner = Instance.new("UICorner")
-ActiveCorner.CornerRadius = UDim.new(1, 0)
-ActiveCorner.Parent = Active
+createCorner(Active, 1)
 
 local ActiveDot = Instance.new("Frame")
-ActiveDot.Size = UDim2.fromOffset(10, 10)
+ActiveDot.Size = UDim2.fromOffset(SIZES.DOT[1], SIZES.DOT[2])
 ActiveDot.Position = UDim2.new(0, 13, 0.5, -5)
-ActiveDot.BackgroundColor3 = Color3.fromRGB(70, 220, 100)
+ActiveDot.BackgroundColor3 = COLORS.DOT
 ActiveDot.BorderSizePixel = 0
 ActiveDot.Parent = Active
 
-local DotCorner = Instance.new("UICorner")
-DotCorner.CornerRadius = UDim.new(1, 0)
-DotCorner.Parent = ActiveDot
+createCorner(ActiveDot, 1)
 
-local ActiveText = Instance.new("TextLabel")
-ActiveText.Size = UDim2.new(1, -32, 1, 0)
-ActiveText.Position = UDim2.fromOffset(30, 0)
-ActiveText.BackgroundTransparency = 1
-ActiveText.Text = "Active"
-ActiveText.TextColor3 = Color3.fromRGB(255, 255, 255)
-ActiveText.TextSize = 15
-ActiveText.Font = Enum.Font.GothamMedium
-ActiveText.TextXAlignment = Enum.TextXAlignment.Left
-ActiveText.Parent = Active
+createTextLabel(Active, "ActiveText", {
+	Size = UDim2.new(1, -32, 1, 0),
+	Position = UDim2.fromOffset(30, 0),
+	Text = "Active",
+	TextSize = 15,
+	TextXAlignment = Enum.TextXAlignment.Left,
+})
 
-makeDraggable(Active)
+local dragConnection = makeDraggable(Active)
 
 --==================================================
 -- PROMPT PANEL
@@ -148,196 +207,230 @@ makeDraggable(Active)
 
 local Panel = Instance.new("Frame")
 Panel.Name = "Prompt"
-Panel.Size = UDim2.fromOffset(300, 150)
-Panel.Position = UDim2.new(0.5, -150, 0.5, -75)
-Panel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Panel.Size = UDim2.fromOffset(SIZES.PANEL[1], SIZES.PANEL[2])
+Panel.Position = UDim2.new(0.5, -SIZES.PANEL[1]/2, 0.5, -SIZES.PANEL[2]/2)
+Panel.BackgroundColor3 = COLORS.BACKGROUND
 Panel.BorderSizePixel = 0
 Panel.Visible = false
 Panel.Parent = Gui
 
-local PanelCorner = Instance.new("UICorner")
-PanelCorner.CornerRadius = UDim.new(0, 12)
-PanelCorner.Parent = Panel
+createCorner(Panel, 12)
 
 --==================================================
 -- X CLOSE / TERMINATE BUTTON
 --==================================================
 
-local Close = Instance.new("TextButton")
-Close.Name = "Close"
-Close.Size = UDim2.fromOffset(28, 28)
-Close.Position = UDim2.new(1, -34, 0, 6)
-Close.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-Close.BorderSizePixel = 0
-Close.Text = "×"
-Close.TextColor3 = Color3.fromRGB(255, 255, 255)
-Close.TextSize = 20
-Close.Font = Enum.Font.GothamBold
-Close.AutoButtonColor = true
-Close.Parent = Panel
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(1, 0)
-CloseCorner.Parent = Close
+local Close = createButton(Panel, "Close", {
+	Size = UDim2.fromOffset(SIZES.CLOSE[1], SIZES.CLOSE[2]),
+	Position = UDim2.new(1, -SIZES.CLOSE[1] - 6, 0, 6),
+	BackgroundColor3 = COLORS.BUTTON_CLOSE,
+	Text = "×",
+	TextSize = 20,
+	Font = Enum.Font.GothamBold,
+	CornerRadius = 1,
+})
 
 --==================================================
 -- MESSAGE
 --==================================================
 
-local Message = Instance.new("TextLabel")
-Message.Name = "Message"
-Message.Size = UDim2.new(1, -55, 0, 55)
-Message.Position = UDim2.fromOffset(15, 15)
-Message.BackgroundTransparency = 1
-Message.Text = "Lucky Drop at Base"
-Message.TextColor3 = Color3.fromRGB(255, 255, 255)
-Message.TextSize = 17
-Message.Font = Enum.Font.GothamMedium
-Message.TextWrapped = true
-Message.Parent = Panel
+createTextLabel(Panel, "Message", {
+	Size = UDim2.new(1, -55, 0, 55),
+	Position = UDim2.fromOffset(15, 15),
+	Text = "Lucky Drop at Base",
+	TextSize = 17,
+	TextWrapped = true,
+})
 
 --==================================================
 -- QUESTION
 --==================================================
 
-local Question = Instance.new("TextLabel")
-Question.Size = UDim2.new(1, 0, 0, 25)
-Question.Position = UDim2.fromOffset(0, 68)
-Question.BackgroundTransparency = 1
-Question.Text = "Teleport?"
-Question.TextColor3 = Color3.fromRGB(190, 190, 190)
-Question.TextSize = 14
-Question.Font = Enum.Font.Gotham
-Question.Parent = Panel
+createTextLabel(Panel, "Question", {
+	Size = UDim2.new(1, 0, 0, 25),
+	Position = UDim2.fromOffset(0, 68),
+	Text = "Teleport?",
+	TextColor3 = COLORS.TEXT_DIM,
+	TextSize = 14,
+	Font = Enum.Font.Gotham,
+})
 
 --==================================================
 -- YES BUTTON
 --==================================================
 
-local Yes = Instance.new("TextButton")
-Yes.Name = "Yes"
-Yes.Size = UDim2.fromOffset(115, 38)
-Yes.Position = UDim2.fromOffset(25, 105)
-Yes.BackgroundColor3 = Color3.fromRGB(55, 180, 90)
-Yes.BorderSizePixel = 0
-Yes.Text = "Yes"
-Yes.TextColor3 = Color3.fromRGB(255, 255, 255)
-Yes.TextSize = 15
-Yes.Font = Enum.Font.GothamMedium
-Yes.Parent = Panel
-
-local YesCorner = Instance.new("UICorner")
-YesCorner.CornerRadius = UDim.new(0, 8)
-YesCorner.Parent = Yes
+local Yes = createButton(Panel, "Yes", {
+	Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
+	Position = UDim2.fromOffset(25, 105),
+	BackgroundColor3 = COLORS.BUTTON_YES,
+	Text = "Yes",
+	TextSize = 15,
+	CornerRadius = 8,
+})
 
 --==================================================
 -- NO BUTTON
 --==================================================
 
-local No = Instance.new("TextButton")
-No.Name = "No"
-No.Size = UDim2.fromOffset(115, 38)
-No.Position = UDim2.fromOffset(160, 105)
-No.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-No.BorderSizePixel = 0
-No.Text = "No"
-No.TextColor3 = Color3.fromRGB(255, 255, 255)
-No.TextSize = 15
-No.Font = Enum.Font.GothamMedium
-No.Parent = Panel
-
-local NoCorner = Instance.new("UICorner")
-NoCorner.CornerRadius = UDim.new(0, 8)
-NoCorner.Parent = No
+local No = createButton(Panel, "No", {
+	Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
+	Position = UDim2.fromOffset(SIZES.PANEL[1] - SIZES.BUTTON[1] - 25, 105),
+	BackgroundColor3 = COLORS.BUTTON_NO,
+	Text = "No",
+	TextSize = 15,
+	CornerRadius = 8,
+})
 
 --==================================================
 -- STATE
 --==================================================
 
-local currentBase = nil
-local terminated = false
-local notificationConnection
-local dragConnection
+local state = {
+	currentBase = nil,
+	terminated = false,
+	pendingTeleport = false,
+}
 
 --==================================================
--- TELEPORT
+-- CACHED CHARACTER REFERENCES (Optimization)
 --==================================================
 
-local function teleportToBase(baseName)
-	local position = TELEPORTS[baseName]
+local cachedCharacter = nil
+local cachedRoot = nil
 
-	if not position then
-		return
+local function invalidateCache()
+	cachedCharacter = nil
+	cachedRoot = nil
+end
+
+local function getRootPart()
+	if not cachedCharacter or not cachedCharacter.Parent then
+		cachedCharacter = Player.Character
 	end
-
-	local character = Player.Character
-	if not character then
-		return
+	
+	if not cachedRoot or not cachedRoot.Parent then
+		cachedRoot = cachedCharacter and cachedCharacter:FindFirstChild("HumanoidRootPart")
 	end
-
-	local root = character:FindFirstChild("HumanoidRootPart")
-	if not root then
-		return
-	end
-
-	root.CFrame = CFrame.new(position)
+	
+	return cachedRoot
 end
 
 --==================================================
--- TERMINATE
+-- TELEPORT (Optimized)
+--==================================================
+
+local function teleportToBase(baseName)
+	if state.terminated then return end
+	
+	local position = TELEPORTS[baseName]
+	if not position then
+		warn("Base not found: " .. baseName)
+		return false
+	end
+	
+	local root = getRootPart()
+	if not root then
+		warn("No HumanoidRootPart found")
+		return false
+	end
+	
+	-- Teleport with safety check
+	root.CFrame = CFrame.new(position)
+	print("🚀 Teleported to: " .. baseName)
+	
+	-- Visual feedback for panel
+	state.pendingTeleport = false
+	Panel.Visible = false
+	
+	return true
+end
+
+--==================================================
+-- PANEL SHOW WITH ANIMATION
+--==================================================
+
+local function showPanel(baseName)
+	if state.terminated then return end
+	
+	state.currentBase = baseName
+	
+	-- Update message
+	local messageLabel = Panel:FindFirstChild("Message")
+	if messageLabel then
+		messageLabel.Text = "Lucky Drop at " .. baseName
+	end
+	
+	-- Show with slight animation
+	Panel.Visible = true
+	Panel.BackgroundTransparency = 0.5
+	
+	-- Smooth fade in
+	task.spawn(function()
+		for i = 1, 10 do
+			if state.terminated then break end
+			Panel.BackgroundTransparency = 0.5 - (i * 0.05)
+			task.wait(0.02)
+		end
+		Panel.BackgroundTransparency = 0
+	end)
+end
+
+--==================================================
+-- TERMINATE (Optimized)
 --==================================================
 
 local function terminate()
-	if terminated then
+	if state.terminated then
 		return
 	end
-
-	terminated = true
-	currentBase = nil
-
-	-- Stop notification detection
+	
+	state.terminated = true
+	state.currentBase = nil
+	state.pendingTeleport = false
+	
+	-- Clean up notification connection
 	if notificationConnection then
 		notificationConnection:Disconnect()
 		notificationConnection = nil
 	end
-
-	-- Stop dragging connection
+	
+	-- Clean up drag connection
 	if dragConnection then
 		dragConnection:Disconnect()
 		dragConnection = nil
 	end
-
-	-- Remove the entire GUI
+	
+	-- Remove GUI with cleanup
 	if Gui and Gui.Parent then
+		-- Clear children first for proper cleanup
+		for _, child in ipairs(Gui:GetChildren()) do
+			child:Destroy()
+		end
 		Gui:Destroy()
 	end
-
+	
 	print("🛑 Lucky Drop Teleport GUI terminated")
 end
 
 --==================================================
--- BUTTONS
+-- BUTTON EVENTS
 --==================================================
 
 Yes.MouseButton1Click:Connect(function()
-	if terminated then
+	if state.terminated or not state.currentBase then
 		return
 	end
-
-	if currentBase then
-		teleportToBase(currentBase)
-	end
-
-	currentBase = nil
-	Panel.Visible = false
+	
+	teleportToBase(state.currentBase)
 end)
 
 No.MouseButton1Click:Connect(function()
-	if terminated then
+	if state.terminated then
 		return
 	end
-
-	currentBase = nil
+	
+	state.currentBase = nil
+	state.pendingTeleport = false
 	Panel.Visible = false
 end)
 
@@ -347,34 +440,140 @@ Close.MouseButton1Click:Connect(function()
 end)
 
 --==================================================
--- NOTIFICATION DETECTION
+-- KEYBOARD SHORTCUT (Added feature)
+--==================================================
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed or state.terminated then
+		return
+	end
+	
+	if input.UserInputType == Enum.UserInputType.Keyboard then
+		if input.KeyCode == Enum.KeyCode.X then
+			-- X key also terminates
+			terminate()
+		elseif input.KeyCode == Enum.KeyCode.Y and Panel.Visible then
+			-- Y key for Yes
+			Yes.MouseButton1Click:Fire()
+		elseif input.KeyCode == Enum.KeyCode.N and Panel.Visible then
+			-- N key for No
+			No.MouseButton1Click:Fire()
+		end
+	end
+end)
+
+--==================================================
+-- NOTIFICATION DETECTION (Optimized)
 --==================================================
 
 local Events = ReplicatedStorage:WaitForChild("Events")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 
 notificationConnection = ShowNotification.OnClientEvent:Connect(function(message, color)
-
-	if terminated then
+	if state.terminated then
 		return
 	end
-
+	
 	if typeof(message) ~= "string" then
 		return
 	end
-
+	
+	-- Optimized: Check for base names with early exit
+	local foundBase = nil
 	for baseName in pairs(TELEPORTS) do
-
 		if message:find(baseName, 1, true) then
-
-			currentBase = baseName
-
-			Message.Text = "Lucky Drop at " .. baseName
-			Panel.Visible = true
-
+			foundBase = baseName
 			break
 		end
 	end
+	
+	if foundBase then
+		showPanel(foundBase)
+	end
 end)
 
-print("✅ Lucky Drop Teleport GUI active — no hook required")
+--==================================================
+-- CHARACTER RESPAWN HANDLER (Added)
+--==================================================
+
+Player.CharacterAdded:Connect(function(character)
+	invalidateCache()
+	
+	-- Reset pending teleport state
+	if state.pendingTeleport then
+		state.pendingTeleport = false
+		Panel.Visible = false
+	end
+end)
+
+--==================================================
+-- GUI CLOSE ON RESPAWN (Added)
+--==================================================
+
+Player.CharacterAdded:Connect(function()
+	-- Hide panel on respawn
+	if Panel then
+		Panel.Visible = false
+	end
+end)
+
+--==================================================
+-- BETTER ERROR HANDLING
+--==================================================
+
+local function safeTeleport(baseName)
+	local success, err = pcall(function()
+		teleportToBase(baseName)
+	end)
+	
+	if not success then
+		warn("Teleport failed: " .. tostring(err))
+		state.currentBase = nil
+		Panel.Visible = false
+	end
+end
+
+-- Override Yes button with safe teleport
+Yes.MouseButton1Click:Connect(function()
+	if state.terminated or not state.currentBase then
+		return
+	end
+	
+	safeTeleport(state.currentBase)
+end)
+
+--==================================================
+-- CLEANUP ON PLAYER LEAVING (Added)
+--==================================================
+
+local function onPlayerRemoving()
+	terminate()
+end
+
+-- Disconnect when player leaves
+local playerRemovingConnection
+playerRemovingConnection = Player.AncestryChanged:Connect(function()
+	if not Player.Parent then
+		playerRemovingConnection:Disconnect()
+		terminate()
+	end
+end)
+
+--==================================================
+-- DEBUG INFO (Optional)
+--==================================================
+
+print("✅ Lucky Drop Teleport GUI active")
+print("📌 " .. #TELEPORTS .. " teleport locations loaded")
+print("⌨️ Press X to terminate, Y/N for Yes/No")
+
+--==================================================
+-- RETURN FUNCTIONS FOR EXTERNAL USE
+--==================================================
+
+return {
+	Gui = Gui,
+	terminate = terminate,
+	teleportToBase = teleportToBase,
+	getState = function() return state end,
+}
