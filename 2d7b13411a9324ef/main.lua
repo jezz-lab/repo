@@ -4,6 +4,7 @@
 -- LUCKY DROP TELEPORT GUI
 -- Optimized & Debugged | Functions Preserved
 -- X button completely terminates the GUI
+-- Game ID restricted
 --==================================================
 
 local Players = game:GetService("Players")
@@ -15,34 +16,51 @@ local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 --==================================================
+-- GAME ID RESTRICTION
+--==================================================
+
+local TARGET_GAME_ID = 103050497819513  -- REPLACE WITH YOUR GAME ID
+
+-- Check if running in the correct game
+if game.PlaceId ~= TARGET_GAME_ID then
+    -- Show notification that script won't work
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Wrong Game",
+        Text = "This script only works in the designated game.",
+        Duration = 5
+    })
+    return
+end
+
+--==================================================
 -- CONFIG
 --==================================================
 
 local TELEPORTS = {
-	["Easter's Base"] = Vector3.new(100, 50, 100),
-	["67's Base"] = Vector3.new(200, 50, 200),
-	["Pot Hotspot's Base"] = Vector3.new(300, 50, 300),
-	["Dragon Cannelloni's Base"] = Vector3.new(400, 50, 400),
-	["Cappuccino Assassino's Base"] = Vector3.new(500, 50, 500),
+    ["Easter's Base"] = Vector3.new(4.4, -114.9, 215.3),
+    ["67's Base"] = Vector3.new(-54.0, 5.0, 302.8),
+    ["Pot Hotspot's Base"] = Vector3.new(54.5, 5.0, 372.8),
+    ["Dragon Cannelloni's Base"] = Vector3.new(-56.8, 5.0, 232.5),
+    ["Cappuccino Assassino's Base"] = Vector3.new(56.0, 5.0, 302.9),
 }
 
 local COLORS = {
-	BACKGROUND = Color3.fromRGB(30, 30, 30),
-	BACKGROUND_ACTIVE = Color3.fromRGB(35, 35, 35),
-	BUTTON_YES = Color3.fromRGB(55, 180, 90),
-	BUTTON_NO = Color3.fromRGB(65, 65, 65),
-	BUTTON_CLOSE = Color3.fromRGB(55, 55, 55),
-	DOT = Color3.fromRGB(70, 220, 100),
-	TEXT = Color3.fromRGB(255, 255, 255),
-	TEXT_DIM = Color3.fromRGB(190, 190, 190),
+    BACKGROUND = Color3.fromRGB(30, 30, 30),
+    BACKGROUND_ACTIVE = Color3.fromRGB(35, 35, 35),
+    BUTTON_YES = Color3.fromRGB(55, 180, 90),
+    BUTTON_NO = Color3.fromRGB(65, 65, 65),
+    BUTTON_CLOSE = Color3.fromRGB(55, 55, 55),
+    DOT = Color3.fromRGB(70, 220, 100),
+    TEXT = Color3.fromRGB(255, 255, 255),
+    TEXT_DIM = Color3.fromRGB(190, 190, 190),
 }
 
 local SIZES = {
-	ACTIVE = {105, 38},
-	PANEL = {300, 150},
-	DOT = {10, 10},
-	CLOSE = {28, 28},
-	BUTTON = {115, 38},
+    ACTIVE = {105, 38},
+    PANEL = {300, 150},
+    DOT = {10, 10},
+    CLOSE = {28, 28},
+    BUTTON = {115, 38},
 }
 
 --==================================================
@@ -51,7 +69,7 @@ local SIZES = {
 
 local oldGui = PlayerGui:FindFirstChild("LuckyDropTeleport")
 if oldGui then
-	oldGui:Destroy()
+    oldGui:Destroy()
 end
 
 --==================================================
@@ -70,48 +88,48 @@ Gui.Parent = PlayerGui
 --==================================================
 
 local function makeDraggable(object)
-	local dragging = false
-	local dragStart = nil
-	local startPosition = nil
-	local dragConnection = nil
-	
-	object.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
-			
-			dragging = true
-			dragStart = input.Position
-			startPosition = object.Position
-		end
-	end)
-	
-	object.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-	
-	dragConnection = UserInputService.InputChanged:Connect(function(input)
-		if not dragging then
-			return
-		end
-		
-		if input.UserInputType == Enum.UserInputType.MouseMovement
-			or input.UserInputType == Enum.UserInputType.Touch then
-			
-			local delta = input.Position - dragStart
-			
-			object.Position = UDim2.new(
-				startPosition.X.Scale,
-				startPosition.X.Offset + delta.X,
-				startPosition.Y.Scale,
-				startPosition.Y.Offset + delta.Y
-			)
-		end
-	end)
-	
-	return dragConnection
+    local dragging = false
+    local dragStart = nil
+    local startPosition = nil
+    local dragConnection = nil
+    
+    object.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            
+            dragging = true
+            dragStart = input.Position
+            startPosition = object.Position
+        end
+    end)
+    
+    object.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    
+    dragConnection = UserInputService.InputChanged:Connect(function(input)
+        if not dragging then
+            return
+        end
+        
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            
+            local delta = input.Position - dragStart
+            
+            object.Position = UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    return dragConnection
 end
 
 --==================================================
@@ -119,53 +137,53 @@ end
 --==================================================
 
 local function createCorner(instance, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = type(radius) == "number" and UDim.new(0, radius) or radius
-	corner.Parent = instance
-	return corner
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = type(radius) == "number" and UDim.new(0, radius) or radius
+    corner.Parent = instance
+    return corner
 end
 
 local function createTextLabel(parent, name, props)
-	local label = Instance.new("TextLabel")
-	label.Name = name
-	label.BackgroundTransparency = 1
-	label.TextColor3 = COLORS.TEXT
-	label.TextSize = props.TextSize or 15
-	label.Font = props.Font or Enum.Font.GothamMedium
-	label.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Center
-	label.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
-	label.TextWrapped = props.TextWrapped or false
-	
-	if props.Size then label.Size = props.Size end
-	if props.Position then label.Position = props.Position end
-	if props.Text then label.Text = props.Text end
-	if props.TextColor3 then label.TextColor3 = props.TextColor3 end
-	
-	label.Parent = parent
-	return label
+    local label = Instance.new("TextLabel")
+    label.Name = name
+    label.BackgroundTransparency = 1
+    label.TextColor3 = COLORS.TEXT
+    label.TextSize = props.TextSize or 15
+    label.Font = props.Font or Enum.Font.GothamMedium
+    label.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Center
+    label.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
+    label.TextWrapped = props.TextWrapped or false
+    
+    if props.Size then label.Size = props.Size end
+    if props.Position then label.Position = props.Position end
+    if props.Text then label.Text = props.Text end
+    if props.TextColor3 then label.TextColor3 = props.TextColor3 end
+    
+    label.Parent = parent
+    return label
 end
 
 local function createButton(parent, name, props)
-	local button = Instance.new("TextButton")
-	button.Name = name
-	button.Size = props.Size or UDim2.fromOffset(100, 30)
-	button.BackgroundColor3 = props.BackgroundColor3 or COLORS.BUTTON_NO
-	button.BorderSizePixel = 0
-	button.Text = props.Text or ""
-	button.TextColor3 = props.TextColor3 or COLORS.TEXT
-	button.TextSize = props.TextSize or 15
-	button.Font = props.Font or Enum.Font.GothamMedium
-	button.AutoButtonColor = true
-	
-	if props.Position then button.Position = props.Position end
-	if props.BackgroundTransparency then button.BackgroundTransparency = props.BackgroundTransparency end
-	
-	if props.CornerRadius then
-		createCorner(button, props.CornerRadius)
-	end
-	
-	button.Parent = parent
-	return button
+    local button = Instance.new("TextButton")
+    button.Name = name
+    button.Size = props.Size or UDim2.fromOffset(100, 30)
+    button.BackgroundColor3 = props.BackgroundColor3 or COLORS.BUTTON_NO
+    button.BorderSizePixel = 0
+    button.Text = props.Text or ""
+    button.TextColor3 = props.TextColor3 or COLORS.TEXT
+    button.TextSize = props.TextSize or 15
+    button.Font = props.Font or Enum.Font.GothamMedium
+    button.AutoButtonColor = true
+    
+    if props.Position then button.Position = props.Position end
+    if props.BackgroundTransparency then button.BackgroundTransparency = props.BackgroundTransparency end
+    
+    if props.CornerRadius then
+        createCorner(button, props.CornerRadius)
+    end
+    
+    button.Parent = parent
+    return button
 end
 
 --==================================================
@@ -192,11 +210,11 @@ ActiveDot.Parent = Active
 createCorner(ActiveDot, 1)
 
 createTextLabel(Active, "ActiveText", {
-	Size = UDim2.new(1, -32, 1, 0),
-	Position = UDim2.fromOffset(30, 0),
-	Text = "Active",
-	TextSize = 15,
-	TextXAlignment = Enum.TextXAlignment.Left,
+    Size = UDim2.new(1, -32, 1, 0),
+    Position = UDim2.fromOffset(30, 0),
+    Text = "Active",
+    TextSize = 15,
+    TextXAlignment = Enum.TextXAlignment.Left,
 })
 
 local dragConnection = makeDraggable(Active)
@@ -221,13 +239,13 @@ createCorner(Panel, 12)
 --==================================================
 
 local Close = createButton(Panel, "Close", {
-	Size = UDim2.fromOffset(SIZES.CLOSE[1], SIZES.CLOSE[2]),
-	Position = UDim2.new(1, -SIZES.CLOSE[1] - 6, 0, 6),
-	BackgroundColor3 = COLORS.BUTTON_CLOSE,
-	Text = "×",
-	TextSize = 20,
-	Font = Enum.Font.GothamBold,
-	CornerRadius = 1,
+    Size = UDim2.fromOffset(SIZES.CLOSE[1], SIZES.CLOSE[2]),
+    Position = UDim2.new(1, -SIZES.CLOSE[1] - 6, 0, 6),
+    BackgroundColor3 = COLORS.BUTTON_CLOSE,
+    Text = "×",
+    TextSize = 20,
+    Font = Enum.Font.GothamBold,
+    CornerRadius = 1,
 })
 
 --==================================================
@@ -235,11 +253,11 @@ local Close = createButton(Panel, "Close", {
 --==================================================
 
 createTextLabel(Panel, "Message", {
-	Size = UDim2.new(1, -55, 0, 55),
-	Position = UDim2.fromOffset(15, 15),
-	Text = "Lucky Drop at Base",
-	TextSize = 17,
-	TextWrapped = true,
+    Size = UDim2.new(1, -55, 0, 55),
+    Position = UDim2.fromOffset(15, 15),
+    Text = "Lucky Drop at Base",
+    TextSize = 17,
+    TextWrapped = true,
 })
 
 --==================================================
@@ -247,12 +265,12 @@ createTextLabel(Panel, "Message", {
 --==================================================
 
 createTextLabel(Panel, "Question", {
-	Size = UDim2.new(1, 0, 0, 25),
-	Position = UDim2.fromOffset(0, 68),
-	Text = "Teleport?",
-	TextColor3 = COLORS.TEXT_DIM,
-	TextSize = 14,
-	Font = Enum.Font.Gotham,
+    Size = UDim2.new(1, 0, 0, 25),
+    Position = UDim2.fromOffset(0, 68),
+    Text = "Teleport?",
+    TextColor3 = COLORS.TEXT_DIM,
+    TextSize = 14,
+    Font = Enum.Font.Gotham,
 })
 
 --==================================================
@@ -260,12 +278,12 @@ createTextLabel(Panel, "Question", {
 --==================================================
 
 local Yes = createButton(Panel, "Yes", {
-	Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
-	Position = UDim2.fromOffset(25, 105),
-	BackgroundColor3 = COLORS.BUTTON_YES,
-	Text = "Yes",
-	TextSize = 15,
-	CornerRadius = 8,
+    Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
+    Position = UDim2.fromOffset(25, 105),
+    BackgroundColor3 = COLORS.BUTTON_YES,
+    Text = "Yes",
+    TextSize = 15,
+    CornerRadius = 8,
 })
 
 --==================================================
@@ -273,12 +291,12 @@ local Yes = createButton(Panel, "Yes", {
 --==================================================
 
 local No = createButton(Panel, "No", {
-	Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
-	Position = UDim2.fromOffset(SIZES.PANEL[1] - SIZES.BUTTON[1] - 25, 105),
-	BackgroundColor3 = COLORS.BUTTON_NO,
-	Text = "No",
-	TextSize = 15,
-	CornerRadius = 8,
+    Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
+    Position = UDim2.fromOffset(SIZES.PANEL[1] - SIZES.BUTTON[1] - 25, 105),
+    BackgroundColor3 = COLORS.BUTTON_NO,
+    Text = "No",
+    TextSize = 15,
+    CornerRadius = 8,
 })
 
 --==================================================
@@ -286,9 +304,9 @@ local No = createButton(Panel, "No", {
 --==================================================
 
 local state = {
-	currentBase = nil,
-	terminated = false,
-	pendingTeleport = false,
+    currentBase = nil,
+    terminated = false,
+    pendingTeleport = false,
 }
 
 --==================================================
@@ -299,20 +317,20 @@ local cachedCharacter = nil
 local cachedRoot = nil
 
 local function invalidateCache()
-	cachedCharacter = nil
-	cachedRoot = nil
+    cachedCharacter = nil
+    cachedRoot = nil
 end
 
 local function getRootPart()
-	if not cachedCharacter or not cachedCharacter.Parent then
-		cachedCharacter = Player.Character
-	end
-	
-	if not cachedRoot or not cachedRoot.Parent then
-		cachedRoot = cachedCharacter and cachedCharacter:FindFirstChild("HumanoidRootPart")
-	end
-	
-	return cachedRoot
+    if not cachedCharacter or not cachedCharacter.Parent then
+        cachedCharacter = Player.Character
+    end
+    
+    if not cachedRoot or not cachedRoot.Parent then
+        cachedRoot = cachedCharacter and cachedCharacter:FindFirstChild("HumanoidRootPart")
+    end
+    
+    return cachedRoot
 end
 
 --==================================================
@@ -320,29 +338,29 @@ end
 --==================================================
 
 local function teleportToBase(baseName)
-	if state.terminated then return end
-	
-	local position = TELEPORTS[baseName]
-	if not position then
-		warn("Base not found: " .. baseName)
-		return false
-	end
-	
-	local root = getRootPart()
-	if not root then
-		warn("No HumanoidRootPart found")
-		return false
-	end
-	
-	-- Teleport with safety check
-	root.CFrame = CFrame.new(position)
-	print("🚀 Teleported to: " .. baseName)
-	
-	-- Visual feedback for panel
-	state.pendingTeleport = false
-	Panel.Visible = false
-	
-	return true
+    if state.terminated then return end
+    
+    local position = TELEPORTS[baseName]
+    if not position then
+        warn("Base not found: " .. baseName)
+        return false
+    end
+    
+    local root = getRootPart()
+    if not root then
+        warn("No HumanoidRootPart found")
+        return false
+    end
+    
+    -- Teleport with safety check
+    root.CFrame = CFrame.new(position)
+    print("🚀 Teleported to: " .. baseName)
+    
+    -- Visual feedback for panel
+    state.pendingTeleport = false
+    Panel.Visible = false
+    
+    return true
 end
 
 --==================================================
@@ -350,29 +368,29 @@ end
 --==================================================
 
 local function showPanel(baseName)
-	if state.terminated then return end
-	
-	state.currentBase = baseName
-	
-	-- Update message
-	local messageLabel = Panel:FindFirstChild("Message")
-	if messageLabel then
-		messageLabel.Text = "Lucky Drop at " .. baseName
-	end
-	
-	-- Show with slight animation
-	Panel.Visible = true
-	Panel.BackgroundTransparency = 0.5
-	
-	-- Smooth fade in
-	task.spawn(function()
-		for i = 1, 10 do
-			if state.terminated then break end
-			Panel.BackgroundTransparency = 0.5 - (i * 0.05)
-			task.wait(0.02)
-		end
-		Panel.BackgroundTransparency = 0
-	end)
+    if state.terminated then return end
+    
+    state.currentBase = baseName
+    
+    -- Update message
+    local messageLabel = Panel:FindFirstChild("Message")
+    if messageLabel then
+        messageLabel.Text = "Lucky Drop at " .. baseName
+    end
+    
+    -- Show with slight animation
+    Panel.Visible = true
+    Panel.BackgroundTransparency = 0.5
+    
+    -- Smooth fade in
+    task.spawn(function()
+        for i = 1, 10 do
+            if state.terminated then break end
+            Panel.BackgroundTransparency = 0.5 - (i * 0.05)
+            task.wait(0.02)
+        end
+        Panel.BackgroundTransparency = 0
+    end)
 end
 
 --==================================================
@@ -380,36 +398,36 @@ end
 --==================================================
 
 local function terminate()
-	if state.terminated then
-		return
-	end
-	
-	state.terminated = true
-	state.currentBase = nil
-	state.pendingTeleport = false
-	
-	-- Clean up notification connection
-	if notificationConnection then
-		notificationConnection:Disconnect()
-		notificationConnection = nil
-	end
-	
-	-- Clean up drag connection
-	if dragConnection then
-		dragConnection:Disconnect()
-		dragConnection = nil
-	end
-	
-	-- Remove GUI with cleanup
-	if Gui and Gui.Parent then
-		-- Clear children first for proper cleanup
-		for _, child in ipairs(Gui:GetChildren()) do
-			child:Destroy()
-		end
-		Gui:Destroy()
-	end
-	
-	print("🛑 Lucky Drop Teleport GUI terminated")
+    if state.terminated then
+        return
+    end
+    
+    state.terminated = true
+    state.currentBase = nil
+    state.pendingTeleport = false
+    
+    -- Clean up notification connection
+    if notificationConnection then
+        notificationConnection:Disconnect()
+        notificationConnection = nil
+    end
+    
+    -- Clean up drag connection
+    if dragConnection then
+        dragConnection:Disconnect()
+        dragConnection = nil
+    end
+    
+    -- Remove GUI with cleanup
+    if Gui and Gui.Parent then
+        -- Clear children first for proper cleanup
+        for _, child in ipairs(Gui:GetChildren()) do
+            child:Destroy()
+        end
+        Gui:Destroy()
+    end
+    
+    print("🛑 Lucky Drop Teleport GUI terminated")
 end
 
 --==================================================
@@ -417,26 +435,26 @@ end
 --==================================================
 
 Yes.MouseButton1Click:Connect(function()
-	if state.terminated or not state.currentBase then
-		return
-	end
-	
-	teleportToBase(state.currentBase)
+    if state.terminated or not state.currentBase then
+        return
+    end
+    
+    teleportToBase(state.currentBase)
 end)
 
 No.MouseButton1Click:Connect(function()
-	if state.terminated then
-		return
-	end
-	
-	state.currentBase = nil
-	state.pendingTeleport = false
-	Panel.Visible = false
+    if state.terminated then
+        return
+    end
+    
+    state.currentBase = nil
+    state.pendingTeleport = false
+    Panel.Visible = false
 end)
 
 -- X = FULL TERMINATION
 Close.MouseButton1Click:Connect(function()
-	terminate()
+    terminate()
 end)
 
 --==================================================
@@ -444,22 +462,22 @@ end)
 --==================================================
 
 UserInputService.InputBegan:Connect(function(input, processed)
-	if processed or state.terminated then
-		return
-	end
-	
-	if input.UserInputType == Enum.UserInputType.Keyboard then
-		if input.KeyCode == Enum.KeyCode.X then
-			-- X key also terminates
-			terminate()
-		elseif input.KeyCode == Enum.KeyCode.Y and Panel.Visible then
-			-- Y key for Yes
-			Yes.MouseButton1Click:Fire()
-		elseif input.KeyCode == Enum.KeyCode.N and Panel.Visible then
-			-- N key for No
-			No.MouseButton1Click:Fire()
-		end
-	end
+    if processed or state.terminated then
+        return
+    end
+    
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.X then
+            -- X key also terminates
+            terminate()
+        elseif input.KeyCode == Enum.KeyCode.Y and Panel.Visible then
+            -- Y key for Yes
+            Yes.MouseButton1Click:Fire()
+        elseif input.KeyCode == Enum.KeyCode.N and Panel.Visible then
+            -- N key for No
+            No.MouseButton1Click:Fire()
+        end
+    end
 end)
 
 --==================================================
@@ -470,26 +488,26 @@ local Events = ReplicatedStorage:WaitForChild("Events")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 
 notificationConnection = ShowNotification.OnClientEvent:Connect(function(message, color)
-	if state.terminated then
-		return
-	end
-	
-	if typeof(message) ~= "string" then
-		return
-	end
-	
-	-- Optimized: Check for base names with early exit
-	local foundBase = nil
-	for baseName in pairs(TELEPORTS) do
-		if message:find(baseName, 1, true) then
-			foundBase = baseName
-			break
-		end
-	end
-	
-	if foundBase then
-		showPanel(foundBase)
-	end
+    if state.terminated then
+        return
+    end
+    
+    if typeof(message) ~= "string" then
+        return
+    end
+    
+    -- Optimized: Check for base names with early exit
+    local foundBase = nil
+    for baseName in pairs(TELEPORTS) do
+        if message:find(baseName, 1, true) then
+            foundBase = baseName
+            break
+        end
+    end
+    
+    if foundBase then
+        showPanel(foundBase)
+    end
 end)
 
 --==================================================
@@ -497,13 +515,13 @@ end)
 --==================================================
 
 Player.CharacterAdded:Connect(function(character)
-	invalidateCache()
-	
-	-- Reset pending teleport state
-	if state.pendingTeleport then
-		state.pendingTeleport = false
-		Panel.Visible = false
-	end
+    invalidateCache()
+    
+    -- Reset pending teleport state
+    if state.pendingTeleport then
+        state.pendingTeleport = false
+        Panel.Visible = false
+    end
 end)
 
 --==================================================
@@ -511,10 +529,10 @@ end)
 --==================================================
 
 Player.CharacterAdded:Connect(function()
-	-- Hide panel on respawn
-	if Panel then
-		Panel.Visible = false
-	end
+    -- Hide panel on respawn
+    if Panel then
+        Panel.Visible = false
+    end
 end)
 
 --==================================================
@@ -522,24 +540,24 @@ end)
 --==================================================
 
 local function safeTeleport(baseName)
-	local success, err = pcall(function()
-		teleportToBase(baseName)
-	end)
-	
-	if not success then
-		warn("Teleport failed: " .. tostring(err))
-		state.currentBase = nil
-		Panel.Visible = false
-	end
+    local success, err = pcall(function()
+        teleportToBase(baseName)
+    end)
+    
+    if not success then
+        warn("Teleport failed: " .. tostring(err))
+        state.currentBase = nil
+        Panel.Visible = false
+    end
 end
 
 -- Override Yes button with safe teleport
 Yes.MouseButton1Click:Connect(function()
-	if state.terminated or not state.currentBase then
-		return
-	end
-	
-	safeTeleport(state.currentBase)
+    if state.terminated or not state.currentBase then
+        return
+    end
+    
+    safeTeleport(state.currentBase)
 end)
 
 --==================================================
@@ -547,16 +565,16 @@ end)
 --==================================================
 
 local function onPlayerRemoving()
-	terminate()
+    terminate()
 end
 
 -- Disconnect when player leaves
 local playerRemovingConnection
 playerRemovingConnection = Player.AncestryChanged:Connect(function()
-	if not Player.Parent then
-		playerRemovingConnection:Disconnect()
-		terminate()
-	end
+    if not Player.Parent then
+        playerRemovingConnection:Disconnect()
+        terminate()
+    end
 end)
 
 --==================================================
@@ -564,6 +582,7 @@ end)
 --==================================================
 
 print("✅ Lucky Drop Teleport GUI active")
+print("📍 Game ID: " .. game.PlaceId .. " (Verified)")
 print("📌 " .. #TELEPORTS .. " teleport locations loaded")
 print("⌨️ Press X to terminate, Y/N for Yes/No")
 
@@ -572,8 +591,8 @@ print("⌨️ Press X to terminate, Y/N for Yes/No")
 --==================================================
 
 return {
-	Gui = Gui,
-	terminate = terminate,
-	teleportToBase = teleportToBase,
-	getState = function() return state end,
+    Gui = Gui,
+    terminate = terminate,
+    teleportToBase = teleportToBase,
+    getState = function() return state end,
 }
