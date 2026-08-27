@@ -19,11 +19,10 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- GAME ID RESTRICTION
 --==================================================
 
-local TARGET_GAME_ID = 103050497819513  -- REPLACE WITH YOUR GAME ID
+local TARGET_GAME_ID = 1234567890  -- REPLACE WITH YOUR GAME ID
 
 -- Check if running in the correct game
 if game.PlaceId ~= TARGET_GAME_ID then
-    -- Show notification that script won't work
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Wrong Game",
         Text = "This script only works in the designated game.",
@@ -37,11 +36,11 @@ end
 --==================================================
 
 local TELEPORTS = {
-    ["Easter's Base"] = Vector3.new(4.4, -114.9, 215.3),
-    ["67's Base"] = Vector3.new(-54.0, 5.0, 302.8),
-    ["Pot Hotspot's Base"] = Vector3.new(54.5, 5.0, 372.8),
-    ["Dragon Cannelloni's Base"] = Vector3.new(-56.8, 5.0, 232.5),
-    ["Cappuccino Assassino's Base"] = Vector3.new(56.0, 5.0, 302.9),
+    ["Easter's Base"] = Vector3.new(100, 50, 100),
+    ["67's Base"] = Vector3.new(200, 50, 200),
+    ["Pot Hotspot's Base"] = Vector3.new(300, 50, 300),
+    ["Dragon Cannelloni's Base"] = Vector3.new(400, 50, 400),
+    ["Cappuccino Assassino's Base"] = Vector3.new(500, 50, 500),
 }
 
 local COLORS = {
@@ -147,17 +146,17 @@ local function createTextLabel(parent, name, props)
     local label = Instance.new("TextLabel")
     label.Name = name
     label.BackgroundTransparency = 1
-    label.TextColor3 = COLORS.TEXT
+    label.TextColor3 = props.TextColor3 or COLORS.TEXT
     label.TextSize = props.TextSize or 15
     label.Font = props.Font or Enum.Font.GothamMedium
     label.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Center
     label.TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
     label.TextWrapped = props.TextWrapped or false
+    label.ClipsDescendants = props.ClipsDescendants or false
     
     if props.Size then label.Size = props.Size end
     if props.Position then label.Position = props.Position end
     if props.Text then label.Text = props.Text end
-    if props.TextColor3 then label.TextColor3 = props.TextColor3 end
     
     label.Parent = parent
     return label
@@ -174,9 +173,9 @@ local function createButton(parent, name, props)
     button.TextSize = props.TextSize or 15
     button.Font = props.Font or Enum.Font.GothamMedium
     button.AutoButtonColor = true
+    button.BackgroundTransparency = props.BackgroundTransparency or 0
     
     if props.Position then button.Position = props.Position end
-    if props.BackgroundTransparency then button.BackgroundTransparency = props.BackgroundTransparency end
     
     if props.CornerRadius then
         createCorner(button, props.CornerRadius)
@@ -187,7 +186,7 @@ local function createButton(parent, name, props)
 end
 
 --==================================================
--- ACTIVE INDICATOR
+-- ACTIVE INDICATOR (FIXED)
 --==================================================
 
 local Active = Instance.new("Frame")
@@ -195,28 +194,73 @@ Active.Name = "Active"
 Active.Size = UDim2.fromOffset(SIZES.ACTIVE[1], SIZES.ACTIVE[2])
 Active.Position = UDim2.fromOffset(20, 20)
 Active.BackgroundColor3 = COLORS.BACKGROUND_ACTIVE
-Active.BorderSizePixel = 0
+Active.BorderSizePixel = 1
+Active.BorderColor3 = Color3.fromRGB(80, 80, 80)
+Active.ClipsDescendants = true
+Active.Active = true
 Active.Parent = Gui
 
-createCorner(Active, 1)
+-- Corner for Active frame
+local ActiveCorner = Instance.new("UICorner")
+ActiveCorner.CornerRadius = UDim.new(1, 0)
+ActiveCorner.Parent = Active
 
+-- Active Dot (Green pulsing dot)
 local ActiveDot = Instance.new("Frame")
+ActiveDot.Name = "Dot"
 ActiveDot.Size = UDim2.fromOffset(SIZES.DOT[1], SIZES.DOT[2])
-ActiveDot.Position = UDim2.new(0, 13, 0.5, -5)
+ActiveDot.Position = UDim2.new(0, 13, 0.5, -SIZES.DOT[2]/2)
 ActiveDot.BackgroundColor3 = COLORS.DOT
 ActiveDot.BorderSizePixel = 0
+ActiveDot.BackgroundTransparency = 0
+ActiveDot.ClipsDescendants = true
 ActiveDot.Parent = Active
 
-createCorner(ActiveDot, 1)
+-- Dot Corner
+local DotCorner = Instance.new("UICorner")
+DotCorner.CornerRadius = UDim.new(1, 0)
+DotCorner.Parent = ActiveDot
 
-createTextLabel(Active, "ActiveText", {
-    Size = UDim2.new(1, -32, 1, 0),
-    Position = UDim2.fromOffset(30, 0),
-    Text = "Active",
-    TextSize = 15,
-    TextXAlignment = Enum.TextXAlignment.Left,
-})
+-- Pulse animation for dot
+task.spawn(function()
+    while Gui and Gui.Parent do
+        if not ActiveDot or not ActiveDot.Parent then break end
+        
+        -- Pulse effect
+        for i = 1, 20 do
+            if not ActiveDot or not ActiveDot.Parent then break end
+            local scale = 0.8 + (i / 20) * 0.4
+            ActiveDot.Size = UDim2.fromOffset(SIZES.DOT[1] * scale, SIZES.DOT[2] * scale)
+            ActiveDot.Position = UDim2.new(0, 13 - (SIZES.DOT[1] * (scale - 1) / 2), 0.5, -SIZES.DOT[2] * scale / 2)
+            task.wait(0.02)
+        end
+        
+        for i = 1, 20 do
+            if not ActiveDot or not ActiveDot.Parent then break end
+            local scale = 1.2 - (i / 20) * 0.4
+            ActiveDot.Size = UDim2.fromOffset(SIZES.DOT[1] * scale, SIZES.DOT[2] * scale)
+            ActiveDot.Position = UDim2.new(0, 13 - (SIZES.DOT[1] * (scale - 1) / 2), 0.5, -SIZES.DOT[2] * scale / 2)
+            task.wait(0.02)
+        end
+    end
+end)
 
+-- Active Text Label
+local ActiveText = Instance.new("TextLabel")
+ActiveText.Name = "ActiveText"
+ActiveText.Size = UDim2.new(1, -32, 1, 0)
+ActiveText.Position = UDim2.fromOffset(30, 0)
+ActiveText.BackgroundTransparency = 1
+ActiveText.Text = "Active"
+ActiveText.TextColor3 = COLORS.TEXT
+ActiveText.TextSize = 15
+ActiveText.Font = Enum.Font.GothamMedium
+ActiveText.TextXAlignment = Enum.TextXAlignment.Left
+ActiveText.TextYAlignment = Enum.TextYAlignment.Center
+ActiveText.ClipsDescendants = false
+ActiveText.Parent = Active
+
+-- Make the Active indicator draggable
 local dragConnection = makeDraggable(Active)
 
 --==================================================
@@ -228,76 +272,114 @@ Panel.Name = "Prompt"
 Panel.Size = UDim2.fromOffset(SIZES.PANEL[1], SIZES.PANEL[2])
 Panel.Position = UDim2.new(0.5, -SIZES.PANEL[1]/2, 0.5, -SIZES.PANEL[2]/2)
 Panel.BackgroundColor3 = COLORS.BACKGROUND
-Panel.BorderSizePixel = 0
+Panel.BorderSizePixel = 1
+Panel.BorderColor3 = Color3.fromRGB(60, 60, 60)
 Panel.Visible = false
+Panel.ClipsDescendants = true
+Panel.Active = true
 Panel.Parent = Gui
 
-createCorner(Panel, 12)
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 12)
+PanelCorner.Parent = Panel
 
 --==================================================
 -- X CLOSE / TERMINATE BUTTON
 --==================================================
 
-local Close = createButton(Panel, "Close", {
-    Size = UDim2.fromOffset(SIZES.CLOSE[1], SIZES.CLOSE[2]),
-    Position = UDim2.new(1, -SIZES.CLOSE[1] - 6, 0, 6),
-    BackgroundColor3 = COLORS.BUTTON_CLOSE,
-    Text = "×",
-    TextSize = 20,
-    Font = Enum.Font.GothamBold,
-    CornerRadius = 1,
-})
+local Close = Instance.new("TextButton")
+Close.Name = "Close"
+Close.Size = UDim2.fromOffset(SIZES.CLOSE[1], SIZES.CLOSE[2])
+Close.Position = UDim2.new(1, -SIZES.CLOSE[1] - 6, 0, 6)
+Close.BackgroundColor3 = COLORS.BUTTON_CLOSE
+Close.BorderSizePixel = 0
+Close.Text = "×"
+Close.TextColor3 = COLORS.TEXT
+Close.TextSize = 20
+Close.Font = Enum.Font.GothamBold
+Close.AutoButtonColor = true
+Close.ClipsDescendants = true
+Close.Parent = Panel
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(1, 0)
+CloseCorner.Parent = Close
 
 --==================================================
 -- MESSAGE
 --==================================================
 
-createTextLabel(Panel, "Message", {
-    Size = UDim2.new(1, -55, 0, 55),
-    Position = UDim2.fromOffset(15, 15),
-    Text = "Lucky Drop at Base",
-    TextSize = 17,
-    TextWrapped = true,
-})
+local Message = Instance.new("TextLabel")
+Message.Name = "Message"
+Message.Size = UDim2.new(1, -55, 0, 55)
+Message.Position = UDim2.fromOffset(15, 15)
+Message.BackgroundTransparency = 1
+Message.Text = "Lucky Drop at Base"
+Message.TextColor3 = COLORS.TEXT
+Message.TextSize = 17
+Message.Font = Enum.Font.GothamMedium
+Message.TextWrapped = true
+Message.ClipsDescendants = false
+Message.Parent = Panel
 
 --==================================================
 -- QUESTION
 --==================================================
 
-createTextLabel(Panel, "Question", {
-    Size = UDim2.new(1, 0, 0, 25),
-    Position = UDim2.fromOffset(0, 68),
-    Text = "Teleport?",
-    TextColor3 = COLORS.TEXT_DIM,
-    TextSize = 14,
-    Font = Enum.Font.Gotham,
-})
+local Question = Instance.new("TextLabel")
+Question.Size = UDim2.new(1, 0, 0, 25)
+Question.Position = UDim2.fromOffset(0, 68)
+Question.BackgroundTransparency = 1
+Question.Text = "Teleport?"
+Question.TextColor3 = COLORS.TEXT_DIM
+Question.TextSize = 14
+Question.Font = Enum.Font.Gotham
+Question.ClipsDescendants = false
+Question.Parent = Panel
 
 --==================================================
 -- YES BUTTON
 --==================================================
 
-local Yes = createButton(Panel, "Yes", {
-    Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
-    Position = UDim2.fromOffset(25, 105),
-    BackgroundColor3 = COLORS.BUTTON_YES,
-    Text = "Yes",
-    TextSize = 15,
-    CornerRadius = 8,
-})
+local Yes = Instance.new("TextButton")
+Yes.Name = "Yes"
+Yes.Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2])
+Yes.Position = UDim2.fromOffset(25, 105)
+Yes.BackgroundColor3 = COLORS.BUTTON_YES
+Yes.BorderSizePixel = 0
+Yes.Text = "Yes"
+Yes.TextColor3 = COLORS.TEXT
+Yes.TextSize = 15
+Yes.Font = Enum.Font.GothamMedium
+Yes.AutoButtonColor = true
+Yes.ClipsDescendants = true
+Yes.Parent = Panel
+
+local YesCorner = Instance.new("UICorner")
+YesCorner.CornerRadius = UDim.new(0, 8)
+YesCorner.Parent = Yes
 
 --==================================================
 -- NO BUTTON
 --==================================================
 
-local No = createButton(Panel, "No", {
-    Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2]),
-    Position = UDim2.fromOffset(SIZES.PANEL[1] - SIZES.BUTTON[1] - 25, 105),
-    BackgroundColor3 = COLORS.BUTTON_NO,
-    Text = "No",
-    TextSize = 15,
-    CornerRadius = 8,
-})
+local No = Instance.new("TextButton")
+No.Name = "No"
+No.Size = UDim2.fromOffset(SIZES.BUTTON[1], SIZES.BUTTON[2])
+No.Position = UDim2.fromOffset(SIZES.PANEL[1] - SIZES.BUTTON[1] - 25, 105)
+No.BackgroundColor3 = COLORS.BUTTON_NO
+No.BorderSizePixel = 0
+No.Text = "No"
+No.TextColor3 = COLORS.TEXT
+No.TextSize = 15
+No.Font = Enum.Font.GothamMedium
+No.AutoButtonColor = true
+No.ClipsDescendants = true
+No.Parent = Panel
+
+local NoCorner = Instance.new("UICorner")
+NoCorner.CornerRadius = UDim.new(0, 8)
+NoCorner.Parent = No
 
 --==================================================
 -- STATE
@@ -373,9 +455,8 @@ local function showPanel(baseName)
     state.currentBase = baseName
     
     -- Update message
-    local messageLabel = Panel:FindFirstChild("Message")
-    if messageLabel then
-        messageLabel.Text = "Lucky Drop at " .. baseName
+    if Message then
+        Message.Text = "Lucky Drop at " .. baseName
     end
     
     -- Show with slight animation
@@ -420,10 +501,6 @@ local function terminate()
     
     -- Remove GUI with cleanup
     if Gui and Gui.Parent then
-        -- Clear children first for proper cleanup
-        for _, child in ipairs(Gui:GetChildren()) do
-            child:Destroy()
-        end
         Gui:Destroy()
     end
     
@@ -458,7 +535,7 @@ Close.MouseButton1Click:Connect(function()
 end)
 
 --==================================================
--- KEYBOARD SHORTCUT (Added feature)
+-- KEYBOARD SHORTCUT
 --==================================================
 
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -468,13 +545,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
     
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.X then
-            -- X key also terminates
             terminate()
         elseif input.KeyCode == Enum.KeyCode.Y and Panel.Visible then
-            -- Y key for Yes
             Yes.MouseButton1Click:Fire()
         elseif input.KeyCode == Enum.KeyCode.N and Panel.Visible then
-            -- N key for No
             No.MouseButton1Click:Fire()
         end
     end
@@ -511,7 +585,7 @@ notificationConnection = ShowNotification.OnClientEvent:Connect(function(message
 end)
 
 --==================================================
--- CHARACTER RESPAWN HANDLER (Added)
+-- CHARACTER RESPAWN HANDLER
 --==================================================
 
 Player.CharacterAdded:Connect(function(character)
@@ -525,11 +599,10 @@ Player.CharacterAdded:Connect(function(character)
 end)
 
 --==================================================
--- GUI CLOSE ON RESPAWN (Added)
+-- GUI CLOSE ON RESPAWN
 --==================================================
 
 Player.CharacterAdded:Connect(function()
-    -- Hide panel on respawn
     if Panel then
         Panel.Visible = false
     end
@@ -561,7 +634,7 @@ Yes.MouseButton1Click:Connect(function()
 end)
 
 --==================================================
--- CLEANUP ON PLAYER LEAVING (Added)
+-- CLEANUP ON PLAYER LEAVING
 --==================================================
 
 local function onPlayerRemoving()
