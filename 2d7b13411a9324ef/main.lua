@@ -1,10 +1,9 @@
---for Steal the Brainrot Base
+
 
 --==================================================
 -- LUCKY DROP TELEPORT GUI
 -- No hooks required
--- Detects ReplicatedStorage.Events.ShowNotification
--- Draggable "Active" indicator + teleport prompt
+-- X button completely terminates the GUI
 --==================================================
 
 local Players = game:GetService("Players")
@@ -27,13 +26,27 @@ local TELEPORTS = {
 }
 
 --==================================================
--- GUI
+-- Choose Specific Game
+--==================================================
+
+local ALLOWED_GAME_ID = 1234567890 -- replace with the game's PlaceId
+
+if game.PlaceId ~= ALLOWED_GAME_ID then
+	return
+end
+
+--==================================================
+-- CLEAN OLD GUI
 --==================================================
 
 local oldGui = PlayerGui:FindFirstChild("LuckyDropTeleport")
 if oldGui then
 	oldGui:Destroy()
 end
+
+--==================================================
+-- GUI
+--==================================================
 
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "LuckyDropTeleport"
@@ -49,6 +62,7 @@ local function makeDraggable(object)
 	local dragging = false
 	local dragStart
 	local startPosition
+	local dragConnection
 
 	object.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -66,7 +80,7 @@ local function makeDraggable(object)
 		end
 	end)
 
-	UserInputService.InputChanged:Connect(function(input)
+	dragConnection = UserInputService.InputChanged:Connect(function(input)
 		if not dragging then
 			return
 		end
@@ -84,6 +98,8 @@ local function makeDraggable(object)
 			)
 		end
 	end)
+
+	return dragConnection
 end
 
 --==================================================
@@ -127,7 +143,7 @@ ActiveText.Parent = Active
 makeDraggable(Active)
 
 --==================================================
--- NOTIFICATION PANEL
+-- PROMPT PANEL
 --==================================================
 
 local Panel = Instance.new("Frame")
@@ -144,12 +160,33 @@ PanelCorner.CornerRadius = UDim.new(0, 12)
 PanelCorner.Parent = Panel
 
 --==================================================
+-- X CLOSE / TERMINATE BUTTON
+--==================================================
+
+local Close = Instance.new("TextButton")
+Close.Name = "Close"
+Close.Size = UDim2.fromOffset(28, 28)
+Close.Position = UDim2.new(1, -34, 0, 6)
+Close.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+Close.BorderSizePixel = 0
+Close.Text = "×"
+Close.TextColor3 = Color3.fromRGB(255, 255, 255)
+Close.TextSize = 20
+Close.Font = Enum.Font.GothamBold
+Close.AutoButtonColor = true
+Close.Parent = Panel
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(1, 0)
+CloseCorner.Parent = Close
+
+--==================================================
 -- MESSAGE
 --==================================================
 
 local Message = Instance.new("TextLabel")
 Message.Name = "Message"
-Message.Size = UDim2.new(1, -30, 0, 55)
+Message.Size = UDim2.new(1, -55, 0, 55)
 Message.Position = UDim2.fromOffset(15, 15)
 Message.BackgroundTransparency = 1
 Message.Text = "Lucky Drop at Base"
@@ -214,13 +251,21 @@ NoCorner.CornerRadius = UDim.new(0, 8)
 NoCorner.Parent = No
 
 --==================================================
--- TELEPORT
+-- STATE
 --==================================================
 
 local currentBase = nil
+local terminated = false
+local notificationConnection
+local dragConnection
+
+--==================================================
+-- TELEPORT
+--==================================================
 
 local function teleportToBase(baseName)
 	local position = TELEPORTS[baseName]
+
 	if not position then
 		return
 	end
@@ -239,10 +284,46 @@ local function teleportToBase(baseName)
 end
 
 --==================================================
+-- TERMINATE
+--==================================================
+
+local function terminate()
+	if terminated then
+		return
+	end
+
+	terminated = true
+	currentBase = nil
+
+	-- Stop notification detection
+	if notificationConnection then
+		notificationConnection:Disconnect()
+		notificationConnection = nil
+	end
+
+	-- Stop dragging connection
+	if dragConnection then
+		dragConnection:Disconnect()
+		dragConnection = nil
+	end
+
+	-- Remove the entire GUI
+	if Gui and Gui.Parent then
+		Gui:Destroy()
+	end
+
+	print("🛑 Lucky Drop Teleport GUI terminated")
+end
+
+--==================================================
 -- BUTTONS
 --==================================================
 
 Yes.MouseButton1Click:Connect(function()
+	if terminated then
+		return
+	end
+
 	if currentBase then
 		teleportToBase(currentBase)
 	end
@@ -252,8 +333,17 @@ Yes.MouseButton1Click:Connect(function()
 end)
 
 No.MouseButton1Click:Connect(function()
+	if terminated then
+		return
+	end
+
 	currentBase = nil
 	Panel.Visible = false
+end)
+
+-- X = FULL TERMINATION
+Close.MouseButton1Click:Connect(function()
+	terminate()
 end)
 
 --==================================================
@@ -263,7 +353,11 @@ end)
 local Events = ReplicatedStorage:WaitForChild("Events")
 local ShowNotification = Events:WaitForChild("ShowNotification")
 
-ShowNotification.OnClientEvent:Connect(function(message, color)
+notificationConnection = ShowNotification.OnClientEvent:Connect(function(message, color)
+
+	if terminated then
+		return
+	end
 
 	if typeof(message) ~= "string" then
 		return
