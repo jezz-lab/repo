@@ -19,7 +19,7 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- GAME ID RESTRICTION
 --==================================================
 
-local TARGET_GAME_ID = 1234567890  -- REPLACE WITH YOUR GAME ID
+local TARGET_GAME_ID = 103050497819513  -- REPLACE WITH YOUR GAME ID
 
 -- Check if running in the correct game
 if game.PlaceId ~= TARGET_GAME_ID then
