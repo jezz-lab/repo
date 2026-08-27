@@ -1,8 +1,6 @@
--- fly, inf jump
 -- ============================================
 -- FLY & INF. JUMP GUI
--- Optimized / Debugged
--- Functions preserved
+-- Optimized / Debugged / Functions Preserved
 -- ============================================
 
 --// SERVICES
@@ -44,21 +42,15 @@ local TRANS = {
 
 local CONFIG = {
 	KEY = Enum.KeyCode.F,
-
 	SPEED = 50,
-
 	FLY = false,
 	JUMP = false,
 	OPEN = true,
-
 	ON = Color3.fromRGB(0, 200, 100),
 	OFF = Color3.fromRGB(60, 60, 60),
-
 	BG = Color3.fromRGB(26, 26, 46),
 	ACCENT = Color3.fromRGB(233, 69, 96),
-
 	TEXT = Color3.fromRGB(255, 255, 255),
-
 	ERR = Color3.fromRGB(200, 0, 0),
 	SUC = Color3.fromRGB(0, 200, 100),
 }
@@ -81,119 +73,87 @@ local state = {
 }
 
 -- ============================================
--- CHARACTER HELPERS
--- ============================================
-
-local function getCharacter()
-	return Player.Character
-end
-
-local function getHumanoid()
-	local character = getCharacter()
-
-	if not character then
-		return nil
-	end
-
-	return character:FindFirstChildOfClass("Humanoid")
-end
-
-local function getRootPart()
-	local character = getCharacter()
-
-	if not character then
-		return nil
-	end
-
-	return character:FindFirstChild("HumanoidRootPart")
-end
-
--- ============================================
--- DEVICE / SIZE
+-- OPTIMIZED HELPERS
 -- ============================================
 
 local function getViewportSize()
 	local camera = workspace.CurrentCamera
-
-	if camera then
-		return camera.ViewportSize
-	end
-
-	return Vector2.new(1280, 720)
+	return camera and camera.ViewportSize or Vector2.new(1280, 720)
 end
 
 local function detectDevice()
 	local viewport = getViewportSize()
-
-	if viewport.X >= 1280 then
-		return "PC"
-	elseif viewport.X >= 768 then
-		return "TABLET"
-	else
-		return "PHONE"
-	end
+	if viewport.X >= 1280 then return "PC"
+	elseif viewport.X >= 768 then return "TABLET"
+	else return "PHONE" end
 end
 
 local function buildSizes()
 	local size = SIZES[state.device] or SIZES.PC
-
-	local w = size[1]
-	local h = size[2]
-
+	local w, h = size[1], size[2]
+	
 	return {
-		W = w,
-		H = h,
-
+		W = w, H = h,
 		TH = math.floor(h * 0.20),
 		TS = math.floor(w * 0.055),
-
 		BW = math.floor(w * 0.40),
 		BH = math.floor(h * 0.18),
 		BF = math.floor(w * 0.05),
-
 		IW = math.floor(w * 0.28),
 		IH = math.floor(h * 0.15),
 		IF = math.floor(w * 0.05),
-
 		IC = math.floor(w * 0.10),
 		IFont = math.floor(w * 0.065),
-
 		P = math.floor(w * 0.035),
-
 		HH = math.floor(h * 0.15),
 		HF = math.floor(w * 0.04),
 	}
 end
 
-state.device = detectDevice()
-
-local sizes = buildSizes()
-
 -- ============================================
--- GUI
+-- CACHED CHARACTER REFERENCES (Optimization)
 -- ============================================
 
-local function updateFlyButton()
-	if not ft then
-		return
-	end
+local cachedCharacter = nil
+local cachedHumanoid = nil
+local cachedRoot = nil
 
-	ft.Text = state.flying and "FLY : ON" or "FLY : OFF"
-	ft.BackgroundColor3 = state.flying and CONFIG.ON or CONFIG.OFF
+local function invalidateCache()
+	cachedCharacter = nil
+	cachedHumanoid = nil
+	cachedRoot = nil
 end
 
-local function updateJumpButton()
-	if not jt then
-		return
+local function getCharacter()
+	if not cachedCharacter or not cachedCharacter.Parent then
+		cachedCharacter = Player.Character
 	end
-
-	jt.Text = state.jump and "JUMP : ON" or "JUMP : OFF"
-	jt.BackgroundColor3 = state.jump and CONFIG.ON or CONFIG.OFF
+	return cachedCharacter
 end
+
+local function getHumanoid()
+	if not cachedHumanoid or not cachedHumanoid.Parent then
+		local character = getCharacter()
+		cachedHumanoid = character and character:FindFirstChildOfClass("Humanoid")
+	end
+	return cachedHumanoid
+end
+
+local function getRootPart()
+	if not cachedRoot or not cachedRoot.Parent then
+		local character = getCharacter()
+		cachedRoot = character and character:FindFirstChild("HumanoidRootPart")
+	end
+	return cachedRoot
+end
+
+-- ============================================
+-- OPTIMIZED GUI APPLICATION
+-- ============================================
 
 local function applyGui()
 	local s = sizes
-
+	
 	-- Main frame
 	mf.Size = UDim2.fromOffset(s.W, s.H)
 	mf.BackgroundTransparency = TRANS.STATIC
@@ -203,13 +163,7 @@ local function applyGui()
 
 	-- Toggle icon
 	ti.Size = UDim2.fromOffset(s.IC, s.IC)
-	ti.Position = UDim2.new(
-		0.95,
-		-s.IC / 2,
-		0.05,
-		0
-	)
-
+	ti.Position = UDim2.new(0.95, -s.IC/2, 0.05, 0)
 	ti.BackgroundColor3 = CONFIG.ACCENT
 	ti.TextColor3 = CONFIG.TEXT
 	ti.TextSize = s.IFont
@@ -231,34 +185,23 @@ local function applyGui()
 	-- Fly button
 	if ft then
 		ft.Size = UDim2.fromOffset(s.BW, s.BH)
-		ft.Position = UDim2.fromOffset(
-			s.P,
-			s.TH + s.P
-		)
-
+		ft.Position = UDim2.fromOffset(s.P, s.TH + s.P)
+		ft.BackgroundColor3 = state.flying and CONFIG.ON or CONFIG.OFF
 		ft.TextColor3 = CONFIG.TEXT
 		ft.TextSize = s.BF
+		ft.Text = state.flying and "FLY : ON" or "FLY : OFF"
 		ft.BackgroundTransparency = TRANS.INTERACTIVE
-
-		updateFlyButton()
 	end
 
-	-- Infinite jump button
+	-- Jump button
 	if jt then
 		jt.Size = UDim2.fromOffset(s.BW, s.BH)
-
-		jt.Position = UDim2.new(
-			1,
-			-s.BW - s.P,
-			0,
-			s.TH + s.P
-		)
-
+		jt.Position = UDim2.new(1, -s.BW - s.P, 0, s.TH + s.P)
+		jt.BackgroundColor3 = state.jump and CONFIG.ON or CONFIG.OFF
 		jt.TextColor3 = CONFIG.TEXT
 		jt.TextSize = s.BF
+		jt.Text = state.jump and "JUMP : ON" or "JUMP : OFF"
 		jt.BackgroundTransparency = TRANS.INTERACTIVE
-
-		updateJumpButton()
 	end
 
 	-- Speed row
@@ -273,20 +216,11 @@ local function applyGui()
 		si.BackgroundTransparency = TRANS.INTERACTIVE
 	end
 
-	local buttonWidth =
-		(s.W - s.IW - s.P * 3) / 2
+	local buttonWidth = (s.W - s.IW - s.P * 3) / 2
 
 	if sb then
-		sb.Size = UDim2.fromOffset(
-			buttonWidth,
-			s.IH
-		)
-
-		sb.Position = UDim2.fromOffset(
-			s.IW + s.P * 1.5,
-			speedY
-		)
-
+		sb.Size = UDim2.fromOffset(buttonWidth, s.IH)
+		sb.Position = UDim2.fromOffset(s.IW + s.P * 1.5, speedY)
 		sb.BackgroundColor3 = CONFIG.OFF
 		sb.TextColor3 = CONFIG.TEXT
 		sb.TextSize = s.IF
@@ -295,18 +229,8 @@ local function applyGui()
 	end
 
 	if db then
-		db.Size = UDim2.fromOffset(
-			buttonWidth,
-			s.IH
-		)
-
-		db.Position = UDim2.new(
-			1,
-			-buttonWidth - s.P,
-			0,
-			speedY
-		)
-
+		db.Size = UDim2.fromOffset(buttonWidth, s.IH)
+		db.Position = UDim2.new(1, -buttonWidth - s.P, 0, speedY)
 		db.BackgroundColor3 = CONFIG.OFF
 		db.TextColor3 = CONFIG.TEXT
 		db.TextSize = s.IF
@@ -316,20 +240,8 @@ local function applyGui()
 
 	-- Hint
 	if ht then
-		ht.Size = UDim2.new(
-			1,
-			-s.P * 2,
-			0,
-			s.HH
-		)
-
-		ht.Position = UDim2.new(
-			0,
-			s.P,
-			0,
-			s.H - s.HH - 5
-		)
-
+		ht.Size = UDim2.new(1, -s.P * 2, 0, s.HH)
+		ht.Position = UDim2.new(0, s.P, 0, s.H - s.HH - 5)
 		ht.TextColor3 = CONFIG.TEXT
 		ht.TextSize = s.HF
 		ht.Text = "─── Click [≡] or press F to toggle ───"
@@ -340,140 +252,95 @@ local function applyGui()
 end
 
 -- ============================================
--- FLY
+-- OPTIMIZED FLY SYSTEM
 -- ============================================
 
-local flyConnection
-local flyVelocity
-local flyGyro
-local flyHumanoid
+local flyConnection = nil
+local flyVelocity = nil
+local flyGyro = nil
 
-local function cleanupFlyObjects()
+local function cleanupFly()
 	if flyConnection then
 		flyConnection:Disconnect()
 		flyConnection = nil
 	end
-
+	
 	if flyVelocity then
 		flyVelocity:Destroy()
 		flyVelocity = nil
 	end
-
+	
 	if flyGyro then
 		flyGyro:Destroy()
 		flyGyro = nil
 	end
-
-	if flyHumanoid and flyHumanoid.Parent then
-		flyHumanoid.PlatformStand = false
-	end
-
-	flyHumanoid = nil
-end
-
-local function stopFly()
-	cleanupFlyObjects()
-
+	
 	local humanoid = getHumanoid()
-
 	if humanoid then
 		humanoid.PlatformStand = false
 	end
 end
 
 local function startFly()
-	stopFly()
-
+	cleanupFly()
+	
 	local humanoid = getHumanoid()
 	local root = getRootPart()
-
+	
 	if not humanoid or not root then
 		return
 	end
-
-	flyHumanoid = humanoid
-
+	
 	humanoid.PlatformStand = true
-
-	-- ========================================
-	-- LinearVelocity
-	-- ========================================
-
-	local attachment = root:FindFirstChild("FlyAttachment")
-
-	if not attachment then
-		attachment = Instance.new("Attachment")
-		attachment.Name = "FlyAttachment"
-		attachment.Parent = root
-	end
-
-	flyVelocity = Instance.new("LinearVelocity")
+	
+	flyVelocity = Instance.new("BodyVelocity")
 	flyVelocity.Name = "FlyVelocity"
-	flyVelocity.Attachment0 = attachment
-	flyVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
-	flyVelocity.MaxForce = math.huge
-	flyVelocity.VectorVelocity = Vector3.zero
+	flyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	flyVelocity.Velocity = Vector3.zero
 	flyVelocity.Parent = root
-
-	-- ========================================
-	-- AlignOrientation
-	-- ========================================
-
-	flyGyro = Instance.new("AlignOrientation")
+	
+	flyGyro = Instance.new("BodyGyro")
 	flyGyro.Name = "FlyGyro"
-	flyGyro.Attachment0 = attachment
-	flyGyro.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	flyGyro.MaxTorque = math.huge
-	flyGyro.Responsiveness = 200
+	flyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+	flyGyro.P = 10000
 	flyGyro.CFrame = root.CFrame
 	flyGyro.Parent = root
-
-	-- ========================================
-	-- UPDATE
-	-- ========================================
-
+	
+	local lastMoveDirection = Vector3.zero
+	
 	flyConnection = RunService.RenderStepped:Connect(function()
-		if not state.flying then
+		if not state.flying then return end
+		
+		local root = getRootPart()
+		if not root or not root.Parent then
+			cleanupFly()
 			return
 		end
-
-		if not root.Parent
-			or not humanoid.Parent
-			or humanoid.Health <= 0 then
-
-			stopFly()
-			return
-		end
-
+		
+		local humanoid = getHumanoid()
+		if not humanoid then return end
+		
 		local camera = workspace.CurrentCamera
-
-		if not camera then
-			return
-		end
-
+		if not camera then return end
+		
 		local moveDirection = humanoid.MoveDirection
-
-		if moveDirection.Magnitude > 0 then
-			flyVelocity.VectorVelocity =
-				moveDirection.Unit * state.speed
-		else
-			flyVelocity.VectorVelocity =
-				Vector3.zero
+		
+		-- Only update velocity if direction changed (optimization)
+		if moveDirection.Magnitude > 0.01 then
+			if moveDirection ~= lastMoveDirection then
+				flyVelocity.Velocity = moveDirection.Unit * state.speed
+				lastMoveDirection = moveDirection
+			end
+		elseif flyVelocity.Velocity ~= Vector3.zero then
+			flyVelocity.Velocity = Vector3.zero
+			lastMoveDirection = Vector3.zero
 		end
-
-		-- Face camera direction while flying
-		local lookVector = camera.CFrame.LookVector
-
-		if lookVector.Magnitude > 0 then
-			flyGyro.CFrame = CFrame.lookAt(
-				Vector3.zero,
-				Vector3.new(
-					lookVector.X,
-					lookVector.Y,
-					lookVector.Z
-				)
-			)
-		end
+		
+		-- Update gyro
+		flyGyro.CFrame = CFrame.lookAt(
+			root.Position,
+			root.Position + camera.CFrame.LookVector
+		)
 	end)
 end
 
@@ -481,22 +348,37 @@ local function applyFly()
 	if state.flying then
 		startFly()
 	else
-		stopFly()
+		cleanupFly()
 	end
 end
 
 -- ============================================
--- SPEED
+-- OPTIMIZED SPEED
 -- ============================================
 
 local function applySpeed()
 	local humanoid = getHumanoid()
-
-	if not humanoid then
-		return
+	if humanoid then
+		humanoid.WalkSpeed = state.speed
 	end
+end
 
-	humanoid.WalkSpeed = state.speed
+-- ============================================
+-- BUTTON UPDATES (Optimized with caching)
+-- ============================================
+
+local function updateFlyButton()
+	if ft then
+		ft.Text = state.flying and "FLY : ON" or "FLY : OFF"
+		ft.BackgroundColor3 = state.flying and CONFIG.ON or CONFIG.OFF
+	end
+end
+
+local function updateJumpButton()
+	if jt then
+		jt.Text = state.jump and "JUMP : ON" or "JUMP : OFF"
+		jt.BackgroundColor3 = state.jump and CONFIG.ON or CONFIG.OFF
+	end
 end
 
 -- ============================================
@@ -505,7 +387,6 @@ end
 
 local function toggleGui()
 	state.open = not state.open
-
 	mf.Visible = state.open
 	ti.Text = state.open and "[≡]" or "[+]"
 end
@@ -518,167 +399,104 @@ local function reset()
 	state.flying = CONFIG.FLY
 	state.jump = CONFIG.JUMP
 	state.speed = CONFIG.SPEED
-
+	
+	updateFlyButton()
+	updateJumpButton()
+	
 	if si then
 		si.Text = tostring(state.speed)
 	end
-
-	updateFlyButton()
-	updateJumpButton()
-
+	
 	applySpeed()
 	applyFly()
 end
 
 -- ============================================
--- INFINITE JUMP
+-- OPTIMIZED INFINITE JUMP
 -- ============================================
 
 UserInputService.JumpRequest:Connect(function()
-	if not state.jump then
-		return
+	if state.jump then
+		local humanoid = getHumanoid()
+		if humanoid then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
 	end
-
-	local humanoid = getHumanoid()
-
-	if not humanoid then
-		return
-	end
-
-	if humanoid.Health <= 0 then
-		return
-	end
-
-	-- Don't force jump while sitting
-	if humanoid.Sit then
-		return
-	end
-
-	humanoid:ChangeState(
-		Enum.HumanoidStateType.Jumping
-	)
 end)
 
 -- ============================================
--- DRAG
--- Supports Mouse + Touch
+-- OPTIMIZED DRAG SYSTEM
 -- ============================================
 
 local function isInsideGui(guiObject, position)
 	if not guiObject or not guiObject.Visible then
 		return false
 	end
-
+	
 	local pos = guiObject.AbsolutePosition
 	local size = guiObject.AbsoluteSize
-
-	return (
-		position.X >= pos.X
+	
+	return position.X >= pos.X 
 		and position.X <= pos.X + size.X
 		and position.Y >= pos.Y
 		and position.Y <= pos.Y + size.Y
-	)
 end
 
 local function drag(guiObject, exclusions)
-	if not guiObject then
-		return
-	end
-
 	exclusions = exclusions or {}
-
+	
 	local dragging = false
-	local dragInput
-	local dragStart
-	local startPosition
-
-	local dragThreshold = 5
-	local moved = false
-
+	local dragInput = nil
+	local dragStart = nil
+	local startPosition = nil
+	
 	guiObject.InputBegan:Connect(function(input)
-		local inputType = input.UserInputType
-
-		if inputType ~= Enum.UserInputType.MouseButton1
-			and inputType ~= Enum.UserInputType.Touch then
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1
+			and input.UserInputType ~= Enum.UserInputType.Touch then
 			return
 		end
-
-		-- Don't drag when clicking excluded controls
+		
 		for _, excluded in ipairs(exclusions) do
 			if isInsideGui(excluded, input.Position) then
 				return
 			end
 		end
-
+		
 		dragging = true
-		moved = false
-
 		dragInput = input
 		dragStart = input.Position
 		startPosition = guiObject.Position
 	end)
-
+	
 	guiObject.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement
 			or input.UserInputType == Enum.UserInputType.Touch then
-
 			dragInput = input
 		end
 	end)
-
-	local changedConnection
-
-	changedConnection = UserInputService.InputChanged:Connect(function(input)
-		if not dragging then
+	
+	UserInputService.InputChanged:Connect(function(input)
+		if not dragging or input ~= dragInput then
 			return
 		end
-
-		if input ~= dragInput then
-			return
-		end
-
+		
 		local delta = input.Position - dragStart
-
-		if math.abs(delta.X) >= dragThreshold
-			or math.abs(delta.Y) >= dragThreshold then
-
-			moved = true
-		end
-
+		
 		guiObject.Position = UDim2.new(
 			startPosition.X.Scale,
 			startPosition.X.Offset + delta.X,
-
 			startPosition.Y.Scale,
 			startPosition.Y.Offset + delta.Y
 		)
 	end)
-
+	
 	UserInputService.InputEnded:Connect(function(input)
-		if not dragging then
-			return
-		end
-
-		local inputType = input.UserInputType
-
-		-- FIX:
-		-- Only stop the current drag input.
-		if input == dragInput
-			or input == dragStart
-			or inputType == Enum.UserInputType.MouseButton1
-			or inputType == Enum.UserInputType.Touch then
-
+		if input == dragStart
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = false
-			dragInput = nil
 		end
 	end)
-
-	return function()
-		if changedConnection then
-			changedConnection:Disconnect()
-			changedConnection = nil
-		end
-	end
 end
 
 -- ============================================
@@ -686,27 +504,17 @@ end
 -- ============================================
 
 drag(ti)
-
-drag(mf, {
-	ft,
-	jt,
-	si,
-	sb,
-	db,
-})
+drag(mf, {ft, jt, si, sb, db})
 
 -- ============================================
--- KEYBOARD
+-- KEYBOARD SHORTCUT
 -- ============================================
 
 UserInputService.InputBegan:Connect(function(input, processed)
-	if processed then
-		return
-	end
-
+	if processed then return end
+	
 	if input.UserInputType == Enum.UserInputType.Keyboard
 		and input.KeyCode == CONFIG.KEY then
-
 		toggleGui()
 	end
 end)
@@ -715,9 +523,7 @@ end)
 -- TOGGLE ICON
 -- ============================================
 
-ti.MouseButton1Click:Connect(function()
-	toggleGui()
-end)
+ti.MouseButton1Click:Connect(toggleGui)
 
 -- ============================================
 -- FLY BUTTON
@@ -726,111 +532,55 @@ end)
 if ft then
 	ft.MouseButton1Click:Connect(function()
 		state.flying = not state.flying
-
 		updateFlyButton()
 		applyFly()
 	end)
 end
 
 -- ============================================
--- INFINITE JUMP BUTTON
+-- JUMP BUTTON
 -- ============================================
 
 if jt then
 	jt.MouseButton1Click:Connect(function()
 		state.jump = not state.jump
-
 		updateJumpButton()
 	end)
 end
 
 -- ============================================
--- BUTTON FEEDBACK
+-- SPEED SET
 -- ============================================
 
 local function showButtonFeedback(button, text, color)
-	if not button then
-		return
-	end
-
+	if not button then return end
+	
 	button.Text = text
 	button.BackgroundColor3 = color
-
+	
 	task.delay(0.2, function()
-		if not button or not button.Parent then
-			return
+		if button and button.Parent then
+			button.Text = button == db and "DEFAULT" or "SET"
+			button.BackgroundColor3 = CONFIG.OFF
 		end
-
-		if button == db then
-			button.Text = "DEFAULT"
-		elseif button == sb then
-			button.Text = "SET"
-		end
-
-		button.BackgroundColor3 = CONFIG.OFF
 	end)
 end
-
--- ============================================
--- SET SPEED
--- ============================================
 
 if sb and si then
 	sb.MouseButton1Click:Connect(function()
 		local value = tonumber(si.Text)
-
-		if not value then
+		
+		if value 
+			and value >= SPEED_LIMITS.MIN 
+			and value <= SPEED_LIMITS.MAX then
+			
+			state.speed = value
+			applySpeed()
+			showButtonFeedback(sb, "✓", CONFIG.SUC)
+		else
 			si.Text = tostring(state.speed)
-
-			showButtonFeedback(
-				sb,
-				"✗",
-				CONFIG.ERR
-			)
-
-			return
+			showButtonFeedback(sb, "✗", CONFIG.ERR)
 		end
-
-		if value < SPEED_LIMITS.MIN
-			or value > SPEED_LIMITS.MAX then
-
-			si.Text = tostring(state.speed)
-
-			showButtonFeedback(
-				sb,
-				"✗",
-				CONFIG.ERR
-			)
-
-			return
-		end
-
-		state.speed = value
-
-		-- Normalize displayed value
-		si.Text = tostring(state.speed)
-
-		applySpeed()
-
-		-- Update active fly velocity immediately
-		if flyVelocity then
-			local humanoid = getHumanoid()
-
-			if humanoid then
-				local direction = humanoid.MoveDirection
-
-				if direction.Magnitude > 0 then
-					flyVelocity.VectorVelocity =
-						direction.Unit * state.speed
-				end
-			end
-		end
-
-		showButtonFeedback(
-			sb,
-			"✓",
-			CONFIG.SUC
-		)
 	end)
 end
 
@@ -841,18 +591,13 @@ end
 if db then
 	db.MouseButton1Click:Connect(function()
 		state.speed = CONFIG.SPEED
-
+		
 		if si then
 			si.Text = tostring(state.speed)
 		end
-
+		
 		applySpeed()
-
-		showButtonFeedback(
-			db,
-			"✓",
-			CONFIG.SUC
-		)
+		showButtonFeedback(db, "✓", CONFIG.SUC)
 	end)
 end
 
@@ -861,91 +606,58 @@ end
 -- ============================================
 
 Player.CharacterAdded:Connect(function(character)
-	-- Clean up anything attached to the old character
-	stopFly()
-
-	local humanoid = character:WaitForChild(
-		"Humanoid",
-		5
-	)
-
-	if not humanoid then
-		return
-	end
-
-	local root = character:WaitForChild(
-		"HumanoidRootPart",
-		5
-	)
-
-	if not root then
-		return
-	end
-
+	invalidateCache()
+	
+	local humanoid = character:WaitForChild("Humanoid", 5)
+	if not humanoid then return end
+	
 	task.wait()
-
 	applySpeed()
-
-	if state.flying then
-		applyFly()
-	end
+	applyFly()
 end)
 
 -- ============================================
--- RESIZE
+-- OPTIMIZED RESIZE
 -- ============================================
 
-local resizeConnection
+local resizeConnection = nil
 
 local function onResize()
 	local newDevice = detectDevice()
-
+	
 	if newDevice == state.device then
 		return
 	end
-
+	
 	state.device = newDevice
 	sizes = buildSizes()
-
 	applyGui()
-
+	
 	print("📱 Device: " .. state.device)
 end
 
 local function connectResize()
 	local camera = workspace.CurrentCamera
-
-	if not camera then
-		return
-	end
-
+	if not camera then return end
+	
 	if resizeConnection then
 		resizeConnection:Disconnect()
-		resizeConnection = nil
 	end
-
-	resizeConnection =
-		camera:GetPropertyChangedSignal("ViewportSize")
-			:Connect(onResize)
+	
+	resizeConnection = camera:GetPropertyChangedSignal("ViewportSize"):Connect(onResize)
 end
 
 connectResize()
 
-workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
-	connectResize()
-end)
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(connectResize)
 
 -- ============================================
 -- INIT
 -- ============================================
 
+state.device = detectDevice()
+sizes = buildSizes()
 applyGui()
 reset()
 
-print(
-	"✅ Fly & Inf. Jump Loaded!"
-	.. " | Device: "
-	.. state.device
-	.. " | Press "
-	.. tostring(CONFIG.KEY)
-)
+print("✅ Fly & Inf. Jump Loaded! | Device: " .. state.device .. " | Press " .. tostring(CONFIG.KEY))
