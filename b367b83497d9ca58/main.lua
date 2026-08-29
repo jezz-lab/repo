@@ -1,4 +1,3 @@
-```lua
 -- Become a Brainrot
 --==================================================
 -- AUTO COLLECT CASH
@@ -17,9 +16,9 @@ local CHECK_INTERVAL = 1   -- seconds
 --==================================================
 
 if ALLOWED_GAME_ID ~= "" then
-    if game.GameId ~= tonumber(ALLOWED_GAME_ID) then
-        return
-    end
+if game.GameId ~= tonumber(ALLOWED_GAME_ID) then
+return
+end
 end
 
 --==================================================
@@ -47,7 +46,7 @@ local CollectCash = Events:WaitForChild("CollectCash")
 local OldGui = CoreGui:FindFirstChild("AutoCollectCash")
 
 if OldGui then
-    OldGui:Destroy()
+OldGui:Destroy()
 end
 
 --==================================================
@@ -168,45 +167,48 @@ IconCorner.Parent = ToggleIcon
 --==================================================
 
 local function MakeDraggable(Object)
-    local Dragging = false
-    local DragStart
-    local StartPosition
+local Dragging = false
+local DragStart
+local StartPosition
 
-    Object.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1
-            or Input.UserInputType == Enum.UserInputType.Touch then
+```
+Object.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
 
-            Dragging = true
-            DragStart = Input.Position
-            StartPosition = Object.Position
+        Dragging = true
+        DragStart = Input.Position
+        StartPosition = Object.Position
 
-            Input.Changed:Connect(function()
-                if Input.UserInputState == Enum.UserInputState.End then
-                    Dragging = false
-                end
-            end)
-        end
-    end)
+        Input.Changed:Connect(function()
+            if Input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
+        end)
+    end
+end)
 
-    UserInputService.InputChanged:Connect(function(Input)
-        if not Dragging then
-            return
-        end
+UserInputService.InputChanged:Connect(function(Input)
+    if not Dragging then
+        return
+    end
 
-        if Input.UserInputType ~= Enum.UserInputType.MouseMovement
-            and Input.UserInputType ~= Enum.UserInputType.Touch then
-            return
-        end
+    if Input.UserInputType ~= Enum.UserInputType.MouseMovement
+        and Input.UserInputType ~= Enum.UserInputType.Touch then
+        return
+    end
 
-        local Delta = Input.Position - DragStart
+    local Delta = Input.Position - DragStart
 
-        Object.Position = UDim2.new(
-            StartPosition.X.Scale,
-            StartPosition.X.Offset + Delta.X,
-            StartPosition.Y.Scale,
-            StartPosition.Y.Offset + Delta.Y
-        )
-    end)
+    Object.Position = UDim2.new(
+        StartPosition.X.Scale,
+        StartPosition.X.Offset + Delta.X,
+        StartPosition.Y.Scale,
+        StartPosition.Y.Offset + Delta.Y
+    )
+end)
+```
+
 end
 
 MakeDraggable(MainFrame)
@@ -217,11 +219,11 @@ MakeDraggable(ToggleIcon)
 --==================================================
 
 ToggleIcon.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
+MainFrame.Visible = not MainFrame.Visible
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
+MainFrame.Visible = false
 end)
 
 --==================================================
@@ -231,18 +233,18 @@ end)
 local Enabled = false
 
 local function UpdateCheckbox()
-    if Enabled then
-        CheckBox.Text = "✓"
-        CheckBox.BackgroundColor3 = Color3.fromRGB(60, 120, 70)
-    else
-        CheckBox.Text = ""
-        CheckBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    end
+if Enabled then
+CheckBox.Text = "✓"
+CheckBox.BackgroundColor3 = Color3.fromRGB(60, 120, 70)
+else
+CheckBox.Text = ""
+CheckBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+end
 end
 
 CheckBox.MouseButton1Click:Connect(function()
-    Enabled = not Enabled
-    UpdateCheckbox()
+Enabled = not Enabled
+UpdateCheckbox()
 end)
 
 --==================================================
@@ -250,32 +252,35 @@ end)
 --==================================================
 
 task.spawn(function()
-    while ScreenGui.Parent do
+while ScreenGui.Parent do
 
-        if Enabled then
+```
+    if Enabled then
 
-            local AnimalStands =
-                LocalPlayer:FindFirstChild("AnimalStands")
+        local AnimalStands =
+            LocalPlayer:FindFirstChild("AnimalStands")
 
-            if AnimalStands then
+        if AnimalStands then
 
-                for i = 1, MAX_STAND do
+            for i = 1, MAX_STAND do
 
-                    local Stand =
-                        AnimalStands:FindFirstChild(tostring(i))
+                local Stand =
+                    AnimalStands:FindFirstChild(tostring(i))
 
-                    if Stand then
-                        CollectCash:FireServer(Stand)
-                    end
-
+                if Stand then
+                    CollectCash:FireServer(Stand)
                 end
 
             end
 
         end
 
-        task.wait(CHECK_INTERVAL)
     end
+
+    task.wait(CHECK_INTERVAL)
+end
+```
+
 end)
 
 --==================================================
@@ -283,4 +288,3 @@ end)
 --==================================================
 
 UpdateCheckbox()
-```
