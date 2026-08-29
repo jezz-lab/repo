@@ -8,17 +8,15 @@
 --==================================================
 
 local ALLOWED_GAME_ID = "" -- "" = every game
-local MAX_STAND = 20       -- increase this later
-local CHECK_INTERVAL = 1   -- seconds
+local MAX_STAND = 20
+local CHECK_INTERVAL = 1
 
 --==================================================
 -- GAME ID LIMITER
 --==================================================
 
-if ALLOWED_GAME_ID ~= "" then
-if game.GameId ~= tonumber(ALLOWED_GAME_ID) then
+if ALLOWED_GAME_ID ~= "" and game.GameId ~= tonumber(ALLOWED_GAME_ID) then
 return
-end
 end
 
 --==================================================
@@ -26,24 +24,27 @@ end
 --==================================================
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 
 --==================================================
--- REMOTE
+-- GUI PARENT
 --==================================================
 
-local Events = ReplicatedStorage:WaitForChild("Events")
-local CollectCash = Events:WaitForChild("CollectCash")
+local GuiParent
+
+if typeof(gethui) == "function" then
+GuiParent = gethui()
+else
+GuiParent = game:GetService("CoreGui")
+end
 
 --==================================================
 -- CLEAN OLD GUI
 --==================================================
 
-local OldGui = CoreGui:FindFirstChild("AutoCollectCash")
+local OldGui = GuiParent:FindFirstChild("AutoCollectCash")
 
 if OldGui then
 OldGui:Destroy()
@@ -57,7 +58,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AutoCollectCash"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = GuiParent
 
 --==================================================
 -- MAIN FRAME
@@ -80,7 +81,6 @@ MainCorner.Parent = MainFrame
 --==================================================
 
 local Title = Instance.new("TextLabel")
-Title.Name = "Title"
 Title.Size = UDim2.new(1, -45, 0, 35)
 Title.Position = UDim2.fromOffset(12, 0)
 Title.BackgroundTransparency = 1
@@ -96,7 +96,6 @@ Title.Parent = MainFrame
 --==================================================
 
 local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "Close"
 CloseButton.Size = UDim2.fromOffset(30, 30)
 CloseButton.Position = UDim2.new(1, -34, 0, 2)
 CloseButton.BackgroundTransparency = 1
@@ -111,7 +110,6 @@ CloseButton.Parent = MainFrame
 --==================================================
 
 local CheckBox = Instance.new("TextButton")
-CheckBox.Name = "CheckBox"
 CheckBox.Size = UDim2.fromOffset(28, 28)
 CheckBox.Position = UDim2.fromOffset(12, 50)
 CheckBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
@@ -127,20 +125,19 @@ CheckCorner.CornerRadius = UDim.new(0, 5)
 CheckCorner.Parent = CheckBox
 
 --==================================================
--- CHECKBOX LABEL
+-- LABEL
 --==================================================
 
-local CheckLabel = Instance.new("TextLabel")
-CheckLabel.Name = "Label"
-CheckLabel.Size = UDim2.new(1, -55, 0, 30)
-CheckLabel.Position = UDim2.fromOffset(50, 49)
-CheckLabel.BackgroundTransparency = 1
-CheckLabel.Text = "Auto Collect Cash"
-CheckLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-CheckLabel.TextSize = 15
-CheckLabel.Font = Enum.Font.Gotham
-CheckLabel.TextXAlignment = Enum.TextXAlignment.Left
-CheckLabel.Parent = MainFrame
+local Label = Instance.new("TextLabel")
+Label.Size = UDim2.new(1, -55, 0, 30)
+Label.Position = UDim2.fromOffset(50, 49)
+Label.BackgroundTransparency = 1
+Label.Text = "Auto Collect Cash"
+Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+Label.TextSize = 15
+Label.Font = Enum.Font.Gotham
+Label.TextXAlignment = Enum.TextXAlignment.Left
+Label.Parent = MainFrame
 
 --==================================================
 -- FLOATING ICON
@@ -163,16 +160,18 @@ IconCorner.CornerRadius = UDim.new(1, 0)
 IconCorner.Parent = ToggleIcon
 
 --==================================================
--- DRAG FUNCTION
+-- DRAG
 --==================================================
 
 local function MakeDraggable(Object)
+
+```
 local Dragging = false
 local DragStart
 local StartPosition
 
-```
 Object.InputBegan:Connect(function(Input)
+
     if Input.UserInputType == Enum.UserInputType.MouseButton1
         or Input.UserInputType == Enum.UserInputType.Touch then
 
@@ -180,15 +179,23 @@ Object.InputBegan:Connect(function(Input)
         DragStart = Input.Position
         StartPosition = Object.Position
 
-        Input.Changed:Connect(function()
-            if Input.UserInputState == Enum.UserInputState.End then
-                Dragging = false
-            end
-        end)
     end
+
+end)
+
+Object.InputEnded:Connect(function(Input)
+
+    if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
+        Dragging = false
+
+    end
+
 end)
 
 UserInputService.InputChanged:Connect(function(Input)
+
     if not Dragging then
         return
     end
@@ -206,6 +213,7 @@ UserInputService.InputChanged:Connect(function(Input)
         StartPosition.Y.Scale,
         StartPosition.Y.Offset + Delta.Y
     )
+
 end)
 ```
 
@@ -215,7 +223,7 @@ MakeDraggable(MainFrame)
 MakeDraggable(ToggleIcon)
 
 --==================================================
--- GUI TOGGLE
+-- TOGGLE GUI
 --==================================================
 
 ToggleIcon.MouseButton1Click:Connect(function()
@@ -233,28 +241,57 @@ end)
 local Enabled = false
 
 local function UpdateCheckbox()
+
+```
 if Enabled then
-CheckBox.Text = "✓"
-CheckBox.BackgroundColor3 = Color3.fromRGB(60, 120, 70)
+    CheckBox.Text = "✓"
+    CheckBox.BackgroundColor3 = Color3.fromRGB(60, 120, 70)
 else
-CheckBox.Text = ""
-CheckBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    CheckBox.Text = ""
+    CheckBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
 end
+```
+
 end
 
 CheckBox.MouseButton1Click:Connect(function()
+
+```
 Enabled = not Enabled
 UpdateCheckbox()
+```
+
 end)
+
+--==================================================
+-- REMOTE
+--==================================================
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Events = ReplicatedStorage:WaitForChild("Events", 10)
+
+if not Events then
+warn("AutoCollectCash: Events folder not found.")
+return
+end
+
+local CollectCash = Events:WaitForChild("CollectCash", 10)
+
+if not CollectCash then
+warn("AutoCollectCash: CollectCash RemoteEvent not found.")
+return
+end
 
 --==================================================
 -- COLLECTION LOOP
 --==================================================
 
 task.spawn(function()
-while ScreenGui.Parent do
 
 ```
+while ScreenGui.Parent do
+
     if Enabled then
 
         local AnimalStands =
@@ -278,6 +315,7 @@ while ScreenGui.Parent do
     end
 
     task.wait(CHECK_INTERVAL)
+
 end
 ```
 
@@ -288,3 +326,5 @@ end)
 --==================================================
 
 UpdateCheckbox()
+
+print("AutoCollectCash loaded successfully.")
