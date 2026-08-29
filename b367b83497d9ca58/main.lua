@@ -7,9 +7,9 @@
 -- CONFIG
 --==================================================
 
-local ALLOWED_GAME_ID = "" -- "" = every game
-local MAX_STAND = 20       -- increase this later
-local CHECK_INTERVAL = 1   -- seconds
+local ALLOWED_GAME_ID = ""    -- "" = every game
+local MAX_STAND = 20
+local CHECK_INTERVAL = 1
 
 --==================================================
 -- GAME ID LIMITER
@@ -28,7 +28,6 @@ end
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -41,7 +40,7 @@ local GuiParent
 if typeof(gethui) == "function" then
     GuiParent = gethui()
 else
-    GuiParent = CoreGui
+    GuiParent = game:GetService("CoreGui")
 end
 
 --==================================================
@@ -53,6 +52,13 @@ local OldGui = GuiParent:FindFirstChild("AutoCollectCash")
 if OldGui then
     OldGui:Destroy()
 end
+
+--==================================================
+-- STATE
+--==================================================
+
+local Enabled = false
+local Terminated = false
 
 --==================================================
 -- GUI
@@ -97,11 +103,11 @@ Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
 --==================================================
--- CLOSE
+-- TERMINATE BUTTON
 --==================================================
 
 local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "Close"
+CloseButton.Name = "Terminate"
 CloseButton.Size = UDim2.fromOffset(30, 30)
 CloseButton.Position = UDim2.new(1, -34, 0, 2)
 CloseButton.BackgroundTransparency = 1
@@ -171,13 +177,19 @@ IconCorner.Parent = ToggleIcon
 -- DRAG FUNCTION
 --==================================================
 
+local Connections = {}
+
 local function MakeDraggable(Object)
 
     local Dragging = false
     local DragStart
     local StartPosition
 
-    Object.InputBegan:Connect(function(Input)
+    local InputBegan = Object.InputBegan:Connect(function(Input)
+
+        if Terminated then
+            return
+        end
 
         if Input.UserInputType == Enum.UserInputType.MouseButton1
             or Input.UserInputType == Enum.UserInputType.Touch then
@@ -190,7 +202,7 @@ local function MakeDraggable(Object)
 
     end)
 
-    Object.InputEnded:Connect(function(Input)
+    local InputEnded = Object.InputEnded:Connect(function(Input)
 
         if Input.UserInputType == Enum.UserInputType.MouseButton1
             or Input.UserInputType == Enum.UserInputType.Touch then
@@ -201,9 +213,9 @@ local function MakeDraggable(Object)
 
     end)
 
-    UserInputService.InputChanged:Connect(function(Input)
+    local InputChanged = UserInputService.InputChanged:Connect(function(Input)
 
-        if not Dragging then
+        if Terminated or not Dragging then
             return
         end
 
@@ -223,6 +235,10 @@ local function MakeDraggable(Object)
 
     end)
 
+    table.insert(Connections, InputBegan)
+    table.insert(Connections, InputEnded)
+    table.insert(Connections, InputChanged)
+
 end
 
 MakeDraggable(MainFrame)
@@ -232,19 +248,21 @@ MakeDraggable(ToggleIcon)
 -- GUI TOGGLE
 --==================================================
 
-ToggleIcon.MouseButton1Click:Connect(function()
+local ToggleConnection = ToggleIcon.MouseButton1Click:Connect(function()
+
+    if Terminated then
+        return
+    end
+
     MainFrame.Visible = not MainFrame.Visible
+
 end)
 
-CloseButton.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-end)
+table.insert(Connections, ToggleConnection)
 
 --==================================================
--- AUTO COLLECT STATE
+-- CHECKBOX
 --==================================================
-
-local Enabled = false
 
 local function UpdateCheckbox()
 
@@ -258,10 +276,45 @@ local function UpdateCheckbox()
 
 end
 
-CheckBox.MouseButton1Click:Connect(function()
+local CheckConnection = CheckBox.MouseButton1Click:Connect(function()
+
+    if Terminated then
+        return
+    end
 
     Enabled = not Enabled
     UpdateCheckbox()
+
+end)
+
+table.insert(Connections, CheckConnection)
+
+--==================================================
+-- TERMINATE
+--==================================================
+
+local TerminateConnection
+
+TerminateConnection = CloseButton.MouseButton1Click:Connect(function()
+
+    if Terminated then
+        return
+    end
+
+    Terminated = true
+    Enabled = false
+
+    for _, Connection in ipairs(Connections) do
+        if Connection and Connection.Connected then
+            Connection:Disconnect()
+        end
+    end
+
+    if TerminateConnection and TerminateConnection.Connected then
+        TerminateConnection:Disconnect()
+    end
+
+    ScreenGui:Destroy()
 
 end)
 
@@ -287,7 +340,7 @@ else
 
         task.spawn(function()
 
-            while ScreenGui.Parent do
+            while not Terminated and ScreenGui.Parent do
 
                 if Enabled then
 
@@ -297,6 +350,10 @@ else
                     if AnimalStands then
 
                         for i = 1, MAX_STAND do
+
+                            if Terminated then
+                                break
+                            end
 
                             local Stand =
                                 AnimalStands:FindFirstChild(tostring(i))
