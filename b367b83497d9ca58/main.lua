@@ -8,7 +8,7 @@
 --==================================================
 
 local ALLOWED_GAME_ID = ""    -- "" = every game
-local MAX_STAND = 20
+local MAX_STAND = 30
 local CHECK_INTERVAL = 1
 
 --==================================================
