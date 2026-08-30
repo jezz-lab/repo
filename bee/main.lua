@@ -14,7 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 --==================================================
 
 local BASE_URL =
-	"https://raw.githubusercontent.com/jezz-lab/rep/main/bee/"
+	"https://raw.githubusercontent.com/jezz-lab/repo/main/bee/"
 
 local ERROR_PANEL_URL = BASE_URL .. "ErrorPanel.lua"
 
