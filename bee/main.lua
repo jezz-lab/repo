@@ -655,7 +655,7 @@ local startupSuccess, startupError = xpcall(function()
 	for index, option in ipairs(options) do
 		local optionButton = Instance.new("TextButton")
 		optionButton.Name = option
-		optionButton.Text = option
+		optionButton.Text = "☐ " .. option
 		optionButton.TextColor3 =
 			Color3.new(1, 1, 1)
 		optionButton.TextSize = 11
