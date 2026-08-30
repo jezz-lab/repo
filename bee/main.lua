@@ -1,6 +1,5 @@
 --==================================================
 -- FARM A FISH | BEE EVENT
--- Full GUI Layout
 --==================================================
 
 local Players = game:GetService("Players")
@@ -70,7 +69,7 @@ toggleCorner.CornerRadius = UDim.new(0, 10)
 toggleCorner.Parent = toggleButton
 
 --==================================================
--- DRAGGING ICON
+-- ICON DRAGGING
 --==================================================
 
 local iconDragging = false
@@ -133,11 +132,9 @@ local title = Instance.new("TextLabel")
 title.Text = "Farm a Fish: Bee Event"
 title.TextColor3 = Color3.new(1, 1, 1)
 title.TextSize = 10
-title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, -60, 0, 40)
+title.Size = UDim2.new(1, -50, 0, 40)
 title.Position = UDim2.fromOffset(10, 0)
-title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = frame
 
 --==================================================
@@ -181,7 +178,7 @@ frame.Visible = not frame.Visible
 end)
 
 --==================================================
--- DRAGGING MAIN FRAME
+-- MAIN FRAME DRAGGING
 --==================================================
 
 local dragging = false
@@ -231,23 +228,23 @@ frame.Position = UDim2.new(
 end)
 
 --==================================================
--- CONTENT CONTAINER
+-- BUTTON CONTAINER
 --==================================================
 
-local content = Instance.new("Frame")
-content.Name = "Content"
-content.BackgroundTransparency = 1
-content.Size = UDim2.new(1, -20, 1, -50)
-content.Position = UDim2.fromOffset(10, 45)
-content.Parent = frame
+local buttonFrame = Instance.new("Frame")
+buttonFrame.Name = "Buttons"
+buttonFrame.BackgroundTransparency = 1
+buttonFrame.Size = UDim2.new(1, -20, 1, -50)
+buttonFrame.Position = UDim2.fromOffset(10, 45)
+buttonFrame.Parent = frame
 
 local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 6)
+layout.Padding = UDim.new(0, 5)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = content
+layout.Parent = buttonFrame
 
 --==================================================
--- SPEED ROW
+-- SPEED INPUT ROW
 --==================================================
 
 local speedRow = Instance.new("Frame")
@@ -256,7 +253,7 @@ speedRow.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 speedRow.BorderSizePixel = 0
 speedRow.Size = UDim2.new(1, 0, 0, 40)
 speedRow.LayoutOrder = 1
-speedRow.Parent = content
+speedRow.Parent = buttonFrame
 
 local speedCorner = Instance.new("UICorner")
 speedCorner.CornerRadius = UDim.new(0, 6)
@@ -268,7 +265,7 @@ speedLabel.TextColor3 = Color3.new(1, 1, 1)
 speedLabel.TextSize = 15
 speedLabel.Font = Enum.Font.Gotham
 speedLabel.BackgroundTransparency = 1
-speedLabel.Size = UDim2.new(0.45, 0, 1, 0)
+speedLabel.Size = UDim2.new(1, -95, 1, 0)
 speedLabel.Position = UDim2.fromOffset(10, 0)
 speedLabel.TextXAlignment = Enum.TextXAlignment.Left
 speedLabel.Parent = speedRow
@@ -283,8 +280,8 @@ speedInput.TextSize = 14
 speedInput.Font = Enum.Font.Gotham
 speedInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 speedInput.BorderSizePixel = 0
-speedInput.Size = UDim2.fromOffset(80, 30)
-speedInput.Position = UDim2.new(1, -90, 0.5, -15)
+speedInput.Size = UDim2.fromOffset(75, 30)
+speedInput.Position = UDim2.new(1, -85, 0.5, -15)
 speedInput.ClearTextOnFocus = false
 speedInput.Parent = speedRow
 
@@ -293,7 +290,7 @@ speedInputCorner.CornerRadius = UDim.new(0, 5)
 speedInputCorner.Parent = speedInput
 
 --==================================================
--- ACTION BUTTON CREATOR
+-- ACTION ROW CREATOR
 --==================================================
 
 local function createAction(name, order, callback)
@@ -303,14 +300,16 @@ row.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 row.BorderSizePixel = 0
 row.Size = UDim2.new(1, 0, 0, 40)
 row.LayoutOrder = order
-row.Parent = content
+row.Parent = buttonFrame
 
 ```
 local rowCorner = Instance.new("UICorner")
 rowCorner.CornerRadius = UDim.new(0, 6)
 rowCorner.Parent = row
 
+-- Label
 local label = Instance.new("TextLabel")
+label.Name = "Label"
 label.Text = name
 label.TextColor3 = Color3.new(1, 1, 1)
 label.TextSize = 14
@@ -321,41 +320,50 @@ label.Position = UDim2.fromOffset(10, 0)
 label.TextXAlignment = Enum.TextXAlignment.Left
 label.Parent = row
 
-local button = Instance.new("TextButton")
-button.Name = "ActionButton"
-button.Text = "⏵"
-button.TextColor3 = Color3.new(1, 1, 1)
-button.TextSize = 18
-button.Font = Enum.Font.GothamBold
-button.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
-button.BorderSizePixel = 0
-button.Size = UDim2.fromOffset(30, 30)
-button.Position = UDim2.new(1, -38, 0.5, -15)
-button.Parent = row
+-- Action button
+local actionButton = Instance.new("TextButton")
+actionButton.Name = "ActionButton"
+
+-- Primary ASCII icon
+actionButton.Text = ">"
+
+actionButton.TextColor3 = Color3.new(1, 1, 1)
+actionButton.TextSize = 18
+actionButton.Font = Enum.Font.GothamBold
+actionButton.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+actionButton.BorderSizePixel = 0
+actionButton.Size = UDim2.fromOffset(30, 30)
+actionButton.Position = UDim2.new(1, -38, 0.5, -15)
+actionButton.AutoButtonColor = false
+actionButton.Parent = row
 
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 7)
-buttonCorner.Parent = button
+buttonCorner.Parent = actionButton
 
-button.MouseEnter:Connect(function()
-	button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+-- Hover
+actionButton.MouseEnter:Connect(function()
+	actionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 end)
 
-button.MouseLeave:Connect(function()
-	button.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+actionButton.MouseLeave:Connect(function()
+	actionButton.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
 end)
 
-button.MouseButton1Down:Connect(function()
-	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+-- Press
+actionButton.MouseButton1Down:Connect(function()
+	actionButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 end)
 
-button.MouseButton1Up:Connect(function()
-	button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+actionButton.MouseButton1Up:Connect(function()
+	actionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 end)
 
-button.MouseButton1Click:Connect(callback)
+actionButton.MouseButton1Click:Connect(function()
+	callback()
+end)
 
-return button
+return actionButton
 ```
 
 end
@@ -366,12 +374,14 @@ end
 
 createAction("Set Speed", 2, function()
 local character = player.Character
-if not character then
-return
-end
 
 ```
+if not character then
+	return
+end
+
 local humanoid = character:FindFirstChildOfClass("Humanoid")
+
 if not humanoid then
 	return
 end
@@ -466,7 +476,10 @@ local Event1 = game:GetService("ReplicatedStorage")
 local Event2 = game:GetService("ReplicatedStorage")
 	.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.feedKingBeeAll"]
 
+-- First
 Event1:FireServer("KingBee")
+
+-- Second
 Event2:FireServer()
 
 print("King Bee fed!")
@@ -495,4 +508,5 @@ end
 
 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateHeight)
 
+-- Initial height
 updateHeight()
