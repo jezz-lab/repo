@@ -1,7 +1,6 @@
 --==================================================
 -- FARM A FISH | BEE EVENT
--- Full GUI + Footer Notifications + Error Handling
--- Purchase Bee Bait Pack removed
+-- Main.lua
 --==================================================
 
 local Players = game:GetService("Players")
@@ -14,6 +13,11 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- SETTINGS
 --==================================================
 
+local BASE_URL =
+	"https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/"
+
+local ERROR_PANEL_URL = BASE_URL .. "ErrorPanel.lua"
+
 local FRAME_WIDTH = 240
 local MIN_HEIGHT = 150
 local MAX_HEIGHT = 500
@@ -23,58 +27,61 @@ local MAX_HEIGHT = 500
 --==================================================
 
 local oldGui = playerGui:FindFirstChild("ActionGui")
-
 if oldGui then
 	oldGui:Destroy()
 end
 
 --==================================================
--- EMERGENCY ERROR HANDLER
+-- ERROR PANEL
 --==================================================
 
-local function emergencyError(message)
-	warn("[ActionGui] Script stopped working:")
-	warn(tostring(message))
+local ErrorPanel
 
-	pcall(function()
-		local existing = playerGui:FindFirstChild("ActionGui_Error")
+local panelLoaded, panelResult = xpcall(function()
+	local source = game:HttpGet(ERROR_PANEL_URL)
 
-		if existing then
-			existing:Destroy()
-		end
+	if not source or source == "" then
+		error("ErrorPanel.lua returned empty content")
+	end
 
-		local errorGui = Instance.new("ScreenGui")
-		errorGui.Name = "ActionGui_Error"
-		errorGui.ResetOnSpawn = false
-		errorGui.Parent = playerGui
+	local loader = loadstring(source)
 
-		local errorFrame = Instance.new("Frame")
-		errorFrame.Size = UDim2.fromOffset(320, 90)
-		errorFrame.Position = UDim2.fromScale(0.5, 0.15)
-		errorFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-		errorFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-		errorFrame.BorderSizePixel = 0
-		errorFrame.Parent = errorGui
+	if not loader then
+		error("Could not compile ErrorPanel.lua")
+	end
 
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0, 8)
-		corner.Parent = errorFrame
+	local module = loader()
 
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(1, -20, 1, -20)
-		label.Position = UDim2.fromOffset(10, 10)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = Color3.new(1, 1, 1)
-		label.TextSize = 13
-		label.Font = Enum.Font.Gotham
-		label.TextWrapped = true
-		label.Text = "⚠ Script stopped working\n\n" .. tostring(message)
-		label.Parent = errorFrame
-	end)
+	if type(module) ~= "table" then
+		error("ErrorPanel.lua must return a table")
+	end
+
+	if type(module.Init) ~= "function" then
+		error("ErrorPanel.lua is missing Init()")
+	end
+
+	if type(module.Add) ~= "function" then
+		error("ErrorPanel.lua is missing Add()")
+	end
+
+	if type(module.Toggle) ~= "function" then
+		error("ErrorPanel.lua is missing Toggle()")
+	end
+
+	return module
+end, function(err)
+	return debug.traceback(tostring(err), 2)
+end)
+
+if panelLoaded then
+	ErrorPanel = panelResult
+else
+	warn("[ActionGui] Failed to load ErrorPanel.lua:")
+	warn(panelResult)
 end
 
 --==================================================
--- STARTUP
+-- MAIN GUI
 --==================================================
 
 local startupSuccess, startupError = xpcall(function()
@@ -275,7 +282,7 @@ local startupSuccess, startupError = xpcall(function()
 	end)
 
 	--==================================================
-	-- CONTENT
+	-- BUTTON CONTAINER
 	--==================================================
 
 	local buttonFrame = Instance.new("Frame")
@@ -291,7 +298,7 @@ local startupSuccess, startupError = xpcall(function()
 	layout.Parent = buttonFrame
 
 	--==================================================
-	-- SPEED ROW
+	-- SPEED INPUT
 	--==================================================
 
 	local speedRow = Instance.new("Frame")
@@ -299,7 +306,7 @@ local startupSuccess, startupError = xpcall(function()
 	speedRow.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	speedRow.BorderSizePixel = 0
 	speedRow.Size = UDim2.new(1, 0, 0, 40)
-	speedRow.LayoutOrder = 1
+	speedRow.LayoutOrder = 0
 	speedRow.Parent = buttonFrame
 
 	local speedCorner = Instance.new("UICorner")
@@ -321,7 +328,7 @@ local startupSuccess, startupError = xpcall(function()
 	local speedInput = Instance.new("TextBox")
 	speedInput.Name = "SpeedInput"
 	speedInput.Text = "16"
-	speedInput.PlaceholderText = "Speed"
+	speedInput.PlaceholderText = "Enter speed"
 	speedInput.TextColor3 = Color3.new(1, 1, 1)
 	speedInput.PlaceholderColor3 = Color3.fromRGB(170, 170, 170)
 	speedInput.TextSize = 14
@@ -383,37 +390,35 @@ local startupSuccess, startupError = xpcall(function()
 	notificationCorner.Parent = notificationButton
 
 	--==================================================
-	-- NOTIFICATION POPUP
+	-- NOTIFICATIONS
 	--==================================================
 
-	local popup = Instance.new("TextLabel")
-	popup.Name = "NotificationPopup"
-	popup.Visible = false
-	popup.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	popup.BorderSizePixel = 0
-	popup.Size = UDim2.new(1, -20, 0, 60)
-	popup.Position = UDim2.new(0, 10, 1, -110)
-	popup.TextColor3 = Color3.new(1, 1, 1)
-	popup.TextSize = 12
-	popup.Font = Enum.Font.Gotham
-	popup.TextWrapped = true
-	popup.TextXAlignment = Enum.TextXAlignment.Left
-	popup.TextYAlignment = Enum.TextYAlignment.Center
-	popup.Parent = frame
-
-	local popupCorner = Instance.new("UICorner")
-	popupCorner.CornerRadius = UDim.new(0, 6)
-	popupCorner.Parent = popup
-
-	--==================================================
-	-- NOTIFICATION FUNCTION
-	--==================================================
-
-	local function notify(message, success)
-		footerLabel.Text = tostring(message)
-		popup.Text = tostring(message)
-		notificationButton.Text = success and "✓" or "⚠"
+	local function notifySuccess(name)
+		footerLabel.Text = name .. " completed"
+		notificationButton.Text = "✓"
 	end
+
+	local function notifyFailure(name, errorMessage)
+		footerLabel.Text = name .. " failed"
+		notificationButton.Text = "⚠"
+
+		warn(
+			"[ActionGui] "
+				.. name
+				.. " failed:\n"
+				.. tostring(errorMessage)
+		)
+
+		if ErrorPanel then
+			pcall(function()
+				ErrorPanel:Add(name, errorMessage)
+			end)
+		end
+	end
+
+	--==================================================
+	-- ERROR PANEL BUTTON
+	--==================================================
 
 	notificationButton.MouseEnter:Connect(function()
 		notificationButton.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
@@ -424,31 +429,55 @@ local startupSuccess, startupError = xpcall(function()
 	end)
 
 	notificationButton.MouseButton1Click:Connect(function()
-		popup.Visible = not popup.Visible
+		if ErrorPanel then
+			local success, err = pcall(function()
+				ErrorPanel:Toggle()
+			end)
+
+			if not success then
+				warn("[ActionGui] ErrorPanel toggle failed:")
+				warn(err)
+			end
+		end
 	end)
+
+	--==================================================
+	-- INITIALIZE ERROR PANEL
+	--==================================================
+
+	if ErrorPanel then
+		local success, err = pcall(function()
+			ErrorPanel:Init(gui)
+		end)
+
+		if not success then
+			warn("[ActionGui] ErrorPanel initialization failed:")
+			warn(err)
+			ErrorPanel = nil
+		end
+	end
 
 	--==================================================
 	-- SAFE ACTION RUNNER
 	--==================================================
 
-	local function runAction(actionName, callback)
+	local function runAction(name, callback)
 		local success, result = xpcall(
 			callback,
 			function(err)
-				return debug.traceback(tostring(err), 2)
+				return debug.traceback(
+					tostring(err),
+					2
+				)
 			end
 		)
 
 		if success then
-			notify(actionName .. " completed", true)
+			notifySuccess(name)
 			return true
 		end
 
-		local message = actionName .. " failed\n\n" .. tostring(result)
-
-		warn("[ActionGui] " .. message)
-		notify(message, false)
-
+		notifyFailure(name, result)
 		return false
 	end
 
@@ -484,7 +513,7 @@ local startupSuccess, startupError = xpcall(function()
 		local actionButton = Instance.new("TextButton")
 		actionButton.Name = "ActionButton"
 
-		-- ASCII fallback
+		-- ASCII icon
 		actionButton.Text = ">"
 
 		actionButton.TextColor3 = Color3.new(1, 1, 1)
@@ -521,14 +550,14 @@ local startupSuccess, startupError = xpcall(function()
 			runAction(name, callback)
 		end)
 
-		return actionButton
+		return row
 	end
 
 	--==================================================
 	-- SET SPEED
 	--==================================================
 
-	createAction("Set Speed", 2, function()
+	createAction("Set Speed", 1, function()
 		local character = player.Character
 
 		if not character then
@@ -554,32 +583,48 @@ local startupSuccess, startupError = xpcall(function()
 	-- INSERT LEFT
 	--==================================================
 
-	createAction("Insert <Left>", 3, function()
-		error("Insert <Left> function is not connected")
+	createAction("Insert <Left>", 2, function()
+		local Event = game:GetService("ReplicatedStorage")
+			.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
+
+		Event:FireServer(1)
 	end)
 
 	--==================================================
 	-- INSERT MIDDLE
 	--==================================================
 
-	createAction("Insert <Middle>", 4, function()
-		error("Insert <Middle> function is not connected")
+	createAction("Insert <Middle>", 3, function()
+		local Event = game:GetService("ReplicatedStorage")
+			.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
+
+		Event:FireServer(2)
 	end)
 
 	--==================================================
 	-- INSERT RIGHT
 	--==================================================
 
-	createAction("Insert <Right>", 5, function()
-		error("Insert <Right> function is not connected")
+	createAction("Insert <Right>", 4, function()
+		local Event = game:GetService("ReplicatedStorage")
+			.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
+
+		Event:FireServer(3)
 	end)
 
 	--==================================================
 	-- FEED KING BEE
 	--==================================================
 
-	createAction("Feed King Bee", 6, function()
-		error("Feed King Bee function is not connected")
+	createAction("Feed King Bee", 5, function()
+		local Event1 = game:GetService("ReplicatedStorage")
+			.rbxts_include.node_modules["@rbxts"].remo.src.container["npc.dialogueCompleted"]
+
+		local Event2 = game:GetService("ReplicatedStorage")
+			.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.feedKingBeeAll"]
+
+		Event1:FireServer("KingBee")
+		Event2:FireServer()
 	end)
 
 	--==================================================
@@ -601,10 +646,12 @@ local startupSuccess, startupError = xpcall(function()
 		)
 	end
 
-	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateHeight)
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(
+		updateHeight
+	)
 
 	updateHeight()
-	notify("Ready", true)
+	notifySuccess("Ready")
 
 end, function(err)
 	return debug.traceback(tostring(err), 2)
@@ -615,5 +662,6 @@ end)
 --==================================================
 
 if not startupSuccess then
-	emergencyError(startupError)
+	warn("[ActionGui] Script stopped working:")
+	warn(startupError)
 end
