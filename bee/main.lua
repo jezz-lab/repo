@@ -817,11 +817,11 @@ local startupSuccess, startupError = xpcall(function()
 		local available = 0
 
 		if hasFish1 then
-			available += 1
+			available = available + 1
 		end
 
 		if hasFish2 then
-			available += 1
+			available = available + 1
 		end
 
 		return hasFish1, hasFish2, available
@@ -1473,7 +1473,7 @@ local startupSuccess, startupError = xpcall(function()
 
 	RunService.Heartbeat:Connect(function(deltaTime)
 
-		elapsed += deltaTime
+		elapsed = elapsed + deltaTime
 
 		if elapsed < INVENTORY_CHECK_INTERVAL then
 			return
@@ -1625,6 +1625,73 @@ local startupSuccess, startupError = xpcall(function()
 			)
 		end
 	end
+
+	--==================================================
+	-- SIMULATE STATE SYNC FOR BEE REQUIREMENTS
+	--==================================================
+
+	-- This simulates the state.sync event which updates the game's state
+	-- with bee event requirements for all dispensers
+	
+	local function simulateStateSync()
+		local StateSync = ReplicatedStorage
+			.rbxts_include
+			.node_modules["@rbxts"]
+			.remo
+			.src
+			.container["state.sync"]
+		
+		if StateSync then
+			-- This simulates the state sync with bee recipes for all three dispensers
+			StateSync:FireServer(
+				{
+					data = {
+						["playerData/players"] = {
+							[tostring(player.UserId)] = {
+								events = {
+									Bee = {
+										recipes = {
+											[1] = {
+												expiresAt = 1788091377,
+												baitRarity = "Epic",
+												reward = 29,
+												fishes = {
+													"GoldenJellyfish",
+													"MauveStinger"
+												}
+											},
+											[2] = {
+												expiresAt = 1788091377,
+												baitRarity = "Epic",
+												reward = 29,
+												fishes = {
+													"BlueSpottedPuffer",
+													"PorcupineFish"
+												}
+											},
+											[3] = {
+												expiresAt = 1788091377,
+												baitRarity = "Epic",
+												reward = 29,
+												fishes = {
+													"Clownfish",
+													"Angelfish"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					type = "patch"
+				}
+			)
+		end
+	end
+
+	-- Trigger the state sync to update all three dispenser requirements
+	simulateStateSync()
 
 	--==================================================
 	-- AUTOMATIC HEIGHT
