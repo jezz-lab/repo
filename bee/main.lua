@@ -23,7 +23,7 @@ local ERROR_PANEL_URL = BASE_URL .. "ErrorPanel.lua"
 local FRAME_W = 300
 local MIN_H = 200
 local MAX_H = 520
-local INV_CHECK = 0.2
+local INV_CHECK = 0.5
 
 --==================================================
 -- REMOVE OLD GUI
@@ -44,10 +44,6 @@ local ErrorPanel
 do
     local ok, mod = xpcall(function()
 
-        if not game.HttpGet then
-            error("HttpGet unavailable")
-        end
-
         local src = game:HttpGet(ERROR_PANEL_URL)
 
         if not src or src == "" then
@@ -64,25 +60,25 @@ do
             error("Failed to compile ErrorPanel.lua")
         end
 
-        local m = fn()
+        local module = fn()
 
-        if type(m) ~= "table" then
+        if type(module) ~= "table" then
             error("ErrorPanel did not return a table")
         end
 
-        if type(m.Init) ~= "function" then
+        if type(module.Init) ~= "function" then
             error("ErrorPanel.Init missing")
         end
 
-        if type(m.Add) ~= "function" then
+        if type(module.Add) ~= "function" then
             error("ErrorPanel.Add missing")
         end
 
-        if type(m.Toggle) ~= "function" then
+        if type(module.Toggle) ~= "function" then
             error("ErrorPanel.Toggle missing")
         end
 
-        return m
+        return module
 
     end, function(e)
         return debug.traceback(tostring(e), 2)
@@ -96,50 +92,41 @@ do
 end
 
 --==================================================
--- SAFE REMOTE LOOKUP
+-- REMOTE LOOKUP
 --==================================================
 
 local function getBeeContainer()
-    local include = RepSto:FindFirstChild("rbxts_include")
 
+    local include = RepSto:FindFirstChild("rbxts_include")
     if not include then
         return nil
     end
 
     local nodeModules = include:FindFirstChild("node_modules")
-
     if not nodeModules then
         return nil
     end
 
     local rbxts = nodeModules:FindFirstChild("@rbxts")
-
     if not rbxts then
         return nil
     end
 
     local remo = rbxts:FindFirstChild("remo")
-
     if not remo then
         return nil
     end
 
     local src = remo:FindFirstChild("src")
-
     if not src then
         return nil
     end
 
-    local container = src:FindFirstChild("container")
-
-    if not container then
-        return nil
-    end
-
-    return container
+    return src:FindFirstChild("container")
 end
 
 local function getRemote(name)
+
     local container = getBeeContainer()
 
     if not container then
@@ -150,7 +137,7 @@ local function getRemote(name)
 end
 
 --==================================================
--- MAIN SCRIPT
+-- MAIN
 --==================================================
 
 local startupSuccess, startupError = xpcall(function()
@@ -210,7 +197,6 @@ local startupSuccess, startupError = xpcall(function()
 
             iconDrag = true
             iconMoved = false
-
             iconStart = input.Position
             iconStartPos = toggle.Position
 
@@ -442,7 +428,7 @@ local startupSuccess, startupError = xpcall(function()
     end
 
     --==================================================
-    -- CREATE BUTTON
+    -- BUTTON
     --==================================================
 
     local function makeButton(parent, text, x, y, w, h, bg, callback)
@@ -539,7 +525,8 @@ local startupSuccess, startupError = xpcall(function()
                     error("No character")
                 end
 
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                local humanoid =
+                    character:FindFirstChildOfClass("Humanoid")
 
                 if not humanoid then
                     error("No humanoid")
@@ -557,7 +544,8 @@ local startupSuccess, startupError = xpcall(function()
         end
     )
 
-    speedBtn.Position = UDim2.new(1, -68, 0.5, -15)
+    speedBtn.Position =
+        UDim2.new(1, -68, 0.5, -15)
 
     --==================================================
     -- AUTO INSERT
@@ -636,11 +624,13 @@ local startupSuccess, startupError = xpcall(function()
         optionButton.Parent = optFrame
 
         optionButton.MouseEnter:Connect(function()
-            optionButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            optionButton.BackgroundColor3 =
+                Color3.fromRGB(60, 60, 60)
         end)
 
         optionButton.MouseLeave:Connect(function()
-            optionButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            optionButton.BackgroundColor3 =
+                Color3.fromRGB(45, 45, 45)
         end)
 
         optionButton.MouseButton1Click:Connect(function()
@@ -656,10 +646,12 @@ local startupSuccess, startupError = xpcall(function()
 
         autoInsertEnabled = not autoInsertEnabled
 
-        autoCheck.Text = autoInsertEnabled and "☑" or "☐"
+        autoCheck.Text =
+            autoInsertEnabled and "☑" or "☐"
 
         if autoInsertEnabled then
-            footerLabel.Text = "Auto Insert: " .. autoInsertChoice
+            footerLabel.Text =
+                "Auto Insert: " .. autoInsertChoice
         else
             footerLabel.Text = "Auto Insert disabled"
         end
@@ -688,6 +680,7 @@ local startupSuccess, startupError = xpcall(function()
 
     local reqLabels = {}
     local statusLabels = {}
+
     local lastAvail = {
         [1] = -1,
         [2] = -1,
@@ -695,12 +688,29 @@ local startupSuccess, startupError = xpcall(function()
     }
 
     --==================================================
-    -- INVENTORY
+    -- INVENTORY CONTAINERS
     --==================================================
 
-    local function findInv()
+    local function getInventoryContainers()
 
-        local names = {
+        local containers = {}
+        local added = {}
+
+        local function addContainer(container)
+
+            if not container then
+                return
+            end
+
+            if added[container] then
+                return
+            end
+
+            added[container] = true
+            table.insert(containers, container)
+        end
+
+        local possibleNames = {
             "Inventory",
             "Items",
             "ItemInventory",
@@ -709,84 +719,149 @@ local startupSuccess, startupError = xpcall(function()
             "Backpack"
         }
 
-        for _, name in ipairs(names) do
+        -- Player containers
+        for _, name in ipairs(possibleNames) do
 
-            local container = player:FindFirstChild(name)
+            local obj = player:FindFirstChild(name)
 
-            if container then
-                return container
+            if obj then
+                addContainer(obj)
             end
+
         end
 
-        -- Also check Backpack service
-        if player:FindFirstChildOfClass("Backpack") then
-            return player:FindFirstChildOfClass("Backpack")
+        -- Character
+        if player.Character then
+            addContainer(player.Character)
+        end
+
+        -- Backpack
+        local backpack =
+            player:FindFirstChildOfClass("Backpack")
+
+        if backpack then
+            addContainer(backpack)
+        end
+
+        return containers
+    end
+
+    --==================================================
+    -- GET ITEM QUANTITY
+    --==================================================
+
+    local function getObjectAmount(object)
+
+        if not object then
+            return nil
+        end
+
+        -- IntValue
+        if object:IsA("IntValue") then
+            return object.Value
+        end
+
+        -- NumberValue
+        if object:IsA("NumberValue") then
+            return object.Value
+        end
+
+        -- Common attributes
+        local amountAttributes = {
+            "Amount",
+            "Quantity",
+            "Count",
+            "Stack",
+            "Stacks"
+        }
+
+        for _, attributeName in ipairs(amountAttributes) do
+
+            local value =
+                object:GetAttribute(attributeName)
+
+            if typeof(value) == "number" then
+                return value
+            end
+
         end
 
         return nil
     end
 
-    local function itemExists(container, name)
+    --==================================================
+    -- ITEM EXISTS
+    --==================================================
 
-        if not container then
-            return false
-        end
+    local function itemExists(name)
 
         if not name or name == "-" then
             return false
         end
 
-        -- Direct object
-        local direct = container:FindFirstChild(name)
+        local containers =
+            getInventoryContainers()
 
-        if direct then
+        for _, container in ipairs(containers) do
 
-            if direct:IsA("IntValue")
-                or direct:IsA("NumberValue") then
+            -- Direct item
+            local direct =
+                container:FindFirstChild(name)
 
-                return direct.Value > 0
-            end
+            if direct then
 
-            return true
-        end
+                local amount =
+                    getObjectAmount(direct)
 
-        -- Descendants
-        for _, object in ipairs(container:GetDescendants()) do
-
-            if object.Name == name then
-
-                if object:IsA("IntValue")
-                    or object:IsA("NumberValue") then
-
-                    return object.Value > 0
+                if amount ~= nil then
+                    return amount > 0
                 end
 
                 return true
+            end
+
+            -- Nested item
+            for _, object in ipairs(
+                container:GetDescendants()
+            ) do
+
+                if object.Name == name then
+
+                    local amount =
+                        getObjectAmount(object)
+
+                    if amount ~= nil then
+                        return amount > 0
+                    end
+
+                    return true
+                end
             end
         end
 
         return false
     end
 
+    --==================================================
+    -- CHECK REQUIREMENTS
+    --==================================================
+
     local function checkReq(id)
 
         local req = fishReq[id]
 
         if not req then
-            error("No requirement for dispenser " .. tostring(id))
-        end
-
-        local inv = findInv()
-
-        if not inv then
-            error("Inventory not found")
+            error(
+                "No requirement for dispenser " ..
+                tostring(id)
+            )
         end
 
         local f1 = req[1]
         local f2 = req[2]
 
-        local h1 = itemExists(inv, f1)
-        local h2 = itemExists(inv, f2)
+        local h1 = itemExists(f1)
+        local h2 = itemExists(f2)
 
         local avail = 0
 
@@ -811,16 +886,23 @@ local startupSuccess, startupError = xpcall(function()
         local status = statusLabels[id]
 
         if not label or not status then
-            error("GUI missing for " .. tostring(id))
+            error(
+                "GUI missing for " ..
+                tostring(dispNames[id])
+            )
         end
 
         local req = fishReq[id]
 
         if not req then
-            error("Requirement missing for " .. tostring(id))
+            error(
+                "Requirement missing for " ..
+                tostring(id)
+            )
         end
 
-        local h1, h2, avail = checkReq(id)
+        local h1, h2, avail =
+            checkReq(id)
 
         local f1 = req[1]
         local f2 = req[2]
@@ -836,8 +918,13 @@ local startupSuccess, startupError = xpcall(function()
             " " ..
             f2
 
-        status.Text = "Available [" .. avail .. "/2]"
-        status.TextColor3 = Color3.fromRGB(180, 180, 180)
+        status.Text =
+            "Available [" ..
+            avail ..
+            "/2]"
+
+        status.TextColor3 =
+            Color3.fromRGB(180, 180, 180)
 
         return avail
     end
@@ -849,7 +936,10 @@ local startupSuccess, startupError = xpcall(function()
                 return updateDisplay(id)
             end,
             function(e)
-                return debug.traceback(tostring(e), 2)
+                return debug.traceback(
+                    tostring(e),
+                    2
+                )
             end
         )
 
@@ -864,114 +954,193 @@ local startupSuccess, startupError = xpcall(function()
     -- INSERT ROW
     --==================================================
 
-    local function createInsertRow(name, order, id)
+    local function createInsertRow(
+        name,
+        order,
+        id
+    )
 
-        local row = createRow(name, order, 75)
+        local row =
+            createRow(name, order, 75)
 
-        local reqLbl = Instance.new("TextLabel")
+        local reqLbl =
+            Instance.new("TextLabel")
+
         reqLbl.Name = "Requirement"
-        reqLbl.Text = name .. " Req: ✗ - / ✗ -"
-        reqLbl.TextColor3 = Color3.new(1, 1, 1)
+        reqLbl.Text =
+            name ..
+            " Req: ✗ - / ✗ -"
+
+        reqLbl.TextColor3 =
+            Color3.new(1, 1, 1)
+
         reqLbl.TextSize = 11
         reqLbl.Font = Enum.Font.Gotham
         reqLbl.BackgroundTransparency = 1
-        reqLbl.Size = UDim2.new(1, -10, 0, 25)
-        reqLbl.Position = UDim2.fromOffset(5, 3)
-        reqLbl.TextXAlignment = Enum.TextXAlignment.Left
-        reqLbl.TextTruncate = Enum.TextTruncate.AtEnd
+        reqLbl.Size =
+            UDim2.new(1, -10, 0, 25)
+
+        reqLbl.Position =
+            UDim2.fromOffset(5, 3)
+
+        reqLbl.TextXAlignment =
+            Enum.TextXAlignment.Left
+
+        reqLbl.TextTruncate =
+            Enum.TextTruncate.AtEnd
+
         reqLbl.Parent = row
 
-        local insBtn = makeButton(
-            row,
-            "Insert",
-            5,
-            31,
-            70,
-            28,
-            Color3.fromRGB(65, 65, 65)
-        )
+        local insBtn =
+            makeButton(
+                row,
+                "Insert",
+                5,
+                31,
+                70,
+                28,
+                Color3.fromRGB(65, 65, 65)
+            )
 
-        local stat = Instance.new("TextLabel")
+        local stat =
+            Instance.new("TextLabel")
+
         stat.Name = "Status"
         stat.Text = "Available [0/2]"
-        stat.TextColor3 = Color3.fromRGB(180, 180, 180)
+        stat.TextColor3 =
+            Color3.fromRGB(180, 180, 180)
+
         stat.TextSize = 10
         stat.Font = Enum.Font.GothamBold
         stat.BackgroundTransparency = 1
-        stat.Size = UDim2.new(1, -85, 0, 20)
-        stat.Position = UDim2.fromOffset(82, 34)
-        stat.TextXAlignment = Enum.TextXAlignment.Left
+
+        stat.Size =
+            UDim2.new(1, -85, 0, 20)
+
+        stat.Position =
+            UDim2.fromOffset(82, 34)
+
+        stat.TextXAlignment =
+            Enum.TextXAlignment.Left
+
         stat.Parent = row
 
-        local actStat = Instance.new("TextLabel")
+        local actStat =
+            Instance.new("TextLabel")
+
         actStat.Name = "ActionStatus"
         actStat.Text = ""
-        actStat.TextColor3 = Color3.fromRGB(220, 70, 70)
+        actStat.TextColor3 =
+            Color3.fromRGB(220, 70, 70)
+
         actStat.TextSize = 10
         actStat.Font = Enum.Font.GothamBold
         actStat.BackgroundTransparency = 1
-        actStat.Size = UDim2.new(1, -10, 0, 18)
-        actStat.Position = UDim2.fromOffset(5, 54)
-        actStat.TextXAlignment = Enum.TextXAlignment.Left
+
+        actStat.Size =
+            UDim2.new(1, -10, 0, 18)
+
+        actStat.Position =
+            UDim2.fromOffset(5, 54)
+
+        actStat.TextXAlignment =
+            Enum.TextXAlignment.Left
+
         actStat.Parent = row
 
         reqLabels[id] = reqLbl
         statusLabels[id] = stat
 
+        --==================================================
+        -- MANUAL INSERT
+        --==================================================
+
         insBtn.MouseButton1Click:Connect(function()
 
             actStat.Text = ""
 
-            local ok = runAction(
-                "Insert <" .. name .. ">",
-                function()
+            local ok =
+                runAction(
+                    "Insert <" ..
+                    name ..
+                    ">",
+                    function()
 
-                    local _, _, avail = checkReq(id)
+                        local _, _, avail =
+                            checkReq(id)
 
-                    if avail < 2 then
+                        if avail < 2 then
 
-                        actStat.Text = "Not Inserted"
+                            actStat.Text =
+                                "Not Inserted"
+
+                            actStat.TextColor3 =
+                                Color3.fromRGB(
+                                    220,
+                                    70,
+                                    70
+                                )
+
+                            footerLabel.Text =
+                                name ..
+                                ": Not Inserted"
+
+                            notifBtn.Text = "⚠"
+
+                            error(
+                                "Requirements not fulfilled. " ..
+                                "Available [" ..
+                                avail ..
+                                "/2]"
+                            )
+                        end
+
+                        local event =
+                            getRemote(
+                                "bee.submitToDispenser"
+                            )
+
+                        if not event then
+                            error(
+                                "bee.submitToDispenser event missing"
+                            )
+                        end
+
+                        if typeof(event.FireServer)
+                            ~= "function" then
+
+                            error(
+                                "bee.submitToDispenser " ..
+                                "is not FireServer-capable"
+                            )
+                        end
+
+                        event:FireServer(id)
+
+                        actStat.Text =
+                            "Inserted"
+
                         actStat.TextColor3 =
-                            Color3.fromRGB(220, 70, 70)
-
-                        footerLabel.Text =
-                            name .. ": Not Inserted"
-
-                        notifBtn.Text = "⚠"
-
-                        error(
-                            "Requirements not fulfilled. Available [" ..
-                            avail ..
-                            "/2]"
-                        )
+                            Color3.fromRGB(
+                                100,
+                                220,
+                                100
+                            )
                     end
-
-                    local event =
-                        getRemote("bee.submitToDispenser")
-
-                    if not event then
-                        error("bee.submitToDispenser event missing")
-                    end
-
-                    if typeof(event.FireServer) ~= "function" then
-                        error("bee.submitToDispenser is not FireServer-capable")
-                    end
-
-                    event:FireServer(id)
-
-                    actStat.Text = "Inserted"
-                    actStat.TextColor3 =
-                        Color3.fromRGB(100, 220, 100)
-
-                end
-            )
+                )
 
             if not ok then
-                actStat.Text = "Not Inserted"
-                actStat.TextColor3 =
-                    Color3.fromRGB(220, 70, 70)
-            end
 
+                actStat.Text =
+                    "Not Inserted"
+
+                actStat.TextColor3 =
+                    Color3.fromRGB(
+                        220,
+                        70,
+                        70
+                    )
+            end
         end)
 
         return row
@@ -985,174 +1154,230 @@ local startupSuccess, startupError = xpcall(function()
     -- BEE FILLING EVENT
     --==================================================
 
-    local BeeFilling = getRemote("bee.fillingStarted")
+    local BeeFilling =
+        getRemote("bee.fillingStarted")
 
-    if BeeFilling and BeeFilling:IsA("RemoteEvent") then
+    if BeeFilling
+        and BeeFilling:IsA("RemoteEvent") then
 
-        BeeFilling.OnClientEvent:Connect(function(id, data)
+        BeeFilling.OnClientEvent:Connect(
+            function(id, data)
 
-            local ok, err = xpcall(function()
+                local ok, err =
+                    xpcall(
+                        function()
 
-                -- Accept numeric or string IDs
-                id = tonumber(id) or id
+                            id =
+                                tonumber(id) or id
 
-                if not dispNames[id] then
-                    error("Invalid dispenser ID: " .. tostring(id))
+                            if not dispNames[id] then
+                                error(
+                                    "Invalid dispenser ID: " ..
+                                    tostring(id)
+                                )
+                            end
+
+                            if type(data)
+                                ~= "table" then
+
+                                error(
+                                    "Bee filling data " ..
+                                    "is not a table"
+                                )
+                            end
+
+                            if type(data.fishes)
+                                ~= "table" then
+
+                                error(
+                                    "data.fishes missing"
+                                )
+                            end
+
+                            local f1 =
+                                data.fishes[1]
+
+                            local f2 =
+                                data.fishes[2]
+
+                            if not f1 or not f2 then
+                                error(
+                                    "Bee filling event " ..
+                                    "missing fish requirements"
+                                )
+                            end
+
+                            fishReq[id] = {
+                                tostring(f1),
+                                tostring(f2)
+                            }
+
+                            local avail,
+                                updateError =
+                                safeUpdate(id)
+
+                            if avail == nil then
+                                error(
+                                    updateError or
+                                    "Display update failed"
+                                )
+                            end
+
+                        end,
+                        function(e)
+                            return debug.traceback(
+                                tostring(e),
+                                2
+                            )
+                        end
+                    )
+
+                if not ok then
+                    notifyFailure(
+                        "Bee Req Update",
+                        err
+                    )
                 end
-
-                if type(data) ~= "table" then
-                    error("Bee filling data is not a table")
-                end
-
-                if type(data.fishes) ~= "table" then
-                    error("Bee filling data.fishes missing")
-                end
-
-                local f1 = data.fishes[1]
-                local f2 = data.fishes[2]
-
-                if not f1 or not f2 then
-                    error("Bee filling event missing fish requirements")
-                end
-
-                fishReq[id] = {
-                    tostring(f1),
-                    tostring(f2)
-                }
-
-                local avail, updateError = safeUpdate(id)
-
-                if avail == nil then
-                    error(updateError or "Display update failed")
-                end
-
-            end, function(e)
-                return debug.traceback(tostring(e), 2)
-            end)
-
-            if not ok then
-                notifyFailure("Bee Req Update", err)
             end
-
-        end)
+        )
 
     else
 
         warn(
-            "[ActionGui] bee.fillingStarted missing or is not a RemoteEvent"
+            "[ActionGui] bee.fillingStarted " ..
+            "missing or is not a RemoteEvent"
         )
-
     end
 
     --==================================================
     -- STATE SYNC
     --==================================================
 
-    local StateSync = getRemote("state.sync")
+    local StateSync =
+        getRemote("state.sync")
 
-    if StateSync and StateSync:IsA("RemoteEvent") then
+    if StateSync
+        and StateSync:IsA("RemoteEvent") then
 
-        StateSync.OnClientEvent:Connect(function(data)
+        StateSync.OnClientEvent:Connect(
+            function(data)
 
-            local ok, err = xpcall(function()
+                local ok, err =
+                    xpcall(
+                        function()
 
-                if type(data) ~= "table" then
-                    return
-                end
+                            if type(data)
+                                ~= "table" then
+                                return
+                            end
 
-                if data.type ~= "patch" then
-                    return
-                end
+                            if data.type ~= "patch" then
+                                return
+                            end
 
-                if type(data.data) ~= "table" then
-                    return
-                end
+                            if type(data.data)
+                                ~= "table" then
+                                return
+                            end
 
-                local playersData =
-                    data.data["playerData/players"]
+                            local playersData =
+                                data.data[
+                                    "playerData/players"
+                                ]
 
-                if type(playersData) ~= "table" then
-                    return
-                end
+                            if type(playersData)
+                                ~= "table" then
+                                return
+                            end
 
-                local pData =
-                    playersData[tostring(player.UserId)]
+                            local pData =
+                                playersData[
+                                    tostring(player.UserId)
+                                ]
 
-                if type(pData) ~= "table" then
-                    return
-                end
+                            if type(pData)
+                                ~= "table" then
+                                return
+                            end
 
-                if type(pData.events) ~= "table" then
-                    return
-                end
+                            if type(pData.events)
+                                ~= "table" then
+                                return
+                            end
 
-                local bee = pData.events.Bee
+                            local bee =
+                                pData.events.Bee
 
-                if type(bee) ~= "table" then
-                    return
-                end
+                            if type(bee)
+                                ~= "table" then
+                                return
+                            end
 
-                local recipes = bee.recipes
+                            local recipes =
+                                bee.recipes
 
-                if type(recipes) ~= "table" then
-                    return
-                end
+                            if type(recipes)
+                                ~= "table" then
+                                return
+                            end
 
-                for id, recipe in pairs(recipes) do
+                            for id, recipe
+                                in pairs(recipes) do
 
-                    -- Important:
-                    -- state data may use string IDs
-                    local numericId = tonumber(id) or id
+                                local numericId =
+                                    tonumber(id) or id
 
-                    if dispNames[numericId]
-                        and type(recipe) == "table"
-                        and type(recipe.fishes) == "table" then
+                                if dispNames[numericId]
+                                    and type(recipe)
+                                        == "table"
+                                    and type(recipe.fishes)
+                                        == "table" then
 
-                        local f1 = recipe.fishes[1]
-                        local f2 = recipe.fishes[2]
+                                    local f1 =
+                                        recipe.fishes[1]
 
-                        if f1 and f2 then
+                                    local f2 =
+                                        recipe.fishes[2]
 
-                            fishReq[numericId] = {
-                                tostring(f1),
-                                tostring(f2)
-                            }
+                                    if f1 and f2 then
 
+                                        fishReq[numericId] = {
+                                            tostring(f1),
+                                            tostring(f2)
+                                        }
+
+                                    end
+                                end
+                            end
+
+                            for id = 1, 3 do
+                                safeUpdate(id)
+                            end
+
+                        end,
+                        function(e)
+                            return debug.traceback(
+                                tostring(e),
+                                2
+                            )
                         end
-                    end
+                    )
+
+                if not ok then
+                    notifyFailure(
+                        "State Sync",
+                        err
+                    )
                 end
-
-                for id = 1, 3 do
-
-                    local _, updateError = safeUpdate(id)
-
-                    if updateError then
-                        warn(
-                            "[ActionGui] State display error <" ..
-                            dispNames[id] ..
-                            ">:\n" ..
-                            tostring(updateError)
-                        )
-                    end
-
-                end
-
-            end, function(e)
-                return debug.traceback(tostring(e), 2)
-            end)
-
-            if not ok then
-                notifyFailure("State Sync", err)
             end
-
-        end)
+        )
 
     else
 
         warn(
-            "[ActionGui] state.sync missing or is not a RemoteEvent"
+            "[ActionGui] state.sync missing " ..
+            "or is not a RemoteEvent"
         )
-
     end
 
     --==================================================
@@ -1165,9 +1390,13 @@ local startupSuccess, startupError = xpcall(function()
 
         if autoInsertChoice == "Left" then
             return 1
-        elseif autoInsertChoice == "Middle" then
+        end
+
+        if autoInsertChoice == "Middle" then
             return 2
-        elseif autoInsertChoice == "Right" then
+        end
+
+        if autoInsertChoice == "Right" then
             return 3
         end
 
@@ -1184,7 +1413,8 @@ local startupSuccess, startupError = xpcall(function()
             return
         end
 
-        local id = getSelectedDispenser()
+        local id =
+            getSelectedDispenser()
 
         if not id then
             return
@@ -1192,41 +1422,62 @@ local startupSuccess, startupError = xpcall(function()
 
         autoBusy = true
 
-        local ok, err = xpcall(function()
+        local ok, err =
+            xpcall(
+                function()
 
-            local _, _, avail = checkReq(id)
+                    local _, _, avail =
+                        checkReq(id)
 
-            if avail < 2 then
-                return
-            end
+                    if avail < 2 then
+                        return
+                    end
 
-            local event =
-                getRemote("bee.submitToDispenser")
+                    local event =
+                        getRemote(
+                            "bee.submitToDispenser"
+                        )
 
-            if not event then
-                error("bee.submitToDispenser event missing")
-            end
+                    if not event then
+                        error(
+                            "bee.submitToDispenser " ..
+                            "event missing"
+                        )
+                    end
 
-            if typeof(event.FireServer) ~= "function" then
-                error("bee.submitToDispenser is not FireServer-capable")
-            end
+                    if typeof(event.FireServer)
+                        ~= "function" then
 
-            event:FireServer(id)
+                        error(
+                            "bee.submitToDispenser " ..
+                            "is not FireServer-capable"
+                        )
+                    end
 
-            local status = statusLabels[id]
+                    event:FireServer(id)
 
-            if status then
-                status.Text = "Available [2/2]"
-            end
+                    local status =
+                        statusLabels[id]
 
-            footerLabel.Text =
-                dispNames[id] .. ": Inserted"
+                    if status then
+                        status.Text =
+                            "Available [2/2]"
+                    end
 
-            notifBtn.Text = "✓"
+                    footerLabel.Text =
+                        dispNames[id] ..
+                        ": Inserted"
 
-        end, function(e)
-            return debug.traceback(tostring(e), 2)
-        end)
+                    notifBtn.Text = "✓"
+
+                end,
+                function(e)
+                    return debug.traceback(
+                        tostring(e),
+                        2
+                    )
+                end
+            )
 
         if not ok then
 
@@ -1239,22 +1490,30 @@ local startupSuccess, startupError = xpcall(function()
 
             local row =
                 btnFrame:FindFirstChild(
-                    dispNames[id] .. "Row"
+                    dispNames[id] ..
+                    "Row"
                 )
 
             local actionStatus =
-                row and row:FindFirstChild("ActionStatus")
+                row and
+                row:FindFirstChild(
+                    "ActionStatus"
+                )
 
             if actionStatus then
-                actionStatus.Text = "Not Inserted"
-                actionStatus.TextColor3 =
-                    Color3.fromRGB(220, 70, 70)
-            end
 
+                actionStatus.Text =
+                    "Not Inserted"
+
+                actionStatus.TextColor3 =
+                    Color3.fromRGB(
+                        220,
+                        70,
+                        70
+                    )
+            end
         end
 
-        -- Small debounce instead of immediately allowing another
-        -- request in the same Heartbeat cycle.
         task.delay(0.15, function()
             autoBusy = false
         end)
@@ -1265,7 +1524,6 @@ local startupSuccess, startupError = xpcall(function()
     --==================================================
 
     local elapsed = 0
-    local inventoryErrorShown = false
 
     RS.Heartbeat:Connect(function(dt)
 
@@ -1283,14 +1541,18 @@ local startupSuccess, startupError = xpcall(function()
 
         for id = 1, 3 do
 
-            local ok, result = xpcall(
-                function()
-                    return updateDisplay(id)
-                end,
-                function(e)
-                    return debug.traceback(tostring(e), 2)
-                end
-            )
+            local ok, result =
+                xpcall(
+                    function()
+                        return updateDisplay(id)
+                    end,
+                    function(e)
+                        return debug.traceback(
+                            tostring(e),
+                            2
+                        )
+                    end
+                )
 
             if ok then
 
@@ -1300,22 +1562,6 @@ local startupSuccess, startupError = xpcall(function()
                     lastAvail[id] = avail
                 end
 
-                inventoryErrorShown = false
-
-            else
-
-                -- Avoid flooding ErrorPanel every 0.5 seconds.
-                if not inventoryErrorShown then
-
-                    inventoryErrorShown = true
-
-                    notifyFailure(
-                        "Inventory Update <" ..
-                        dispNames[id] ..
-                        ">",
-                        result
-                    )
-                end
             end
         end
 
@@ -1327,66 +1573,108 @@ local startupSuccess, startupError = xpcall(function()
     -- FEED KING BEE
     --==================================================
 
-    local rowFeed = createRow("Feed King Bee", 5)
+    local rowFeed =
+        createRow(
+            "Feed King Bee",
+            5
+        )
 
-    local lblFeed = Instance.new("TextLabel")
+    local lblFeed =
+        Instance.new("TextLabel")
+
     lblFeed.Name = "Label"
     lblFeed.Text = "Feed King Bee"
-    lblFeed.TextColor3 = Color3.new(1, 1, 1)
+    lblFeed.TextColor3 =
+        Color3.new(1, 1, 1)
+
     lblFeed.TextSize = 14
     lblFeed.Font = Enum.Font.Gotham
     lblFeed.BackgroundTransparency = 1
-    lblFeed.Size = UDim2.new(1, -55, 1, 0)
-    lblFeed.Position = UDim2.fromOffset(10, 0)
-    lblFeed.TextXAlignment = Enum.TextXAlignment.Left
+
+    lblFeed.Size =
+        UDim2.new(1, -55, 1, 0)
+
+    lblFeed.Position =
+        UDim2.fromOffset(10, 0)
+
+    lblFeed.TextXAlignment =
+        Enum.TextXAlignment.Left
+
     lblFeed.Parent = rowFeed
 
-    local btnFeed = makeButton(
-        rowFeed,
-        ">",
-        0,
-        0,
-        30,
-        30,
-        Color3.fromRGB(65, 65, 65),
-        function()
+    local btnFeed =
+        makeButton(
+            rowFeed,
+            ">",
+            0,
+            0,
+            30,
+            30,
+            Color3.fromRGB(65, 65, 65),
+            function()
 
-            runAction("Feed King Bee", function()
+                runAction(
+                    "Feed King Bee",
+                    function()
 
-                local e1 =
-                    getRemote("npc.dialogueCompleted")
+                        local e1 =
+                            getRemote(
+                                "npc.dialogueCompleted"
+                            )
 
-                local e2 =
-                    getRemote("bee.feedKingBeeAll")
+                        local e2 =
+                            getRemote(
+                                "bee.feedKingBeeAll"
+                            )
 
-                if not e1 then
-                    error("npc.dialogueCompleted missing")
-                end
+                        if not e1 then
+                            error(
+                                "npc.dialogueCompleted missing"
+                            )
+                        end
 
-                if not e2 then
-                    error("bee.feedKingBeeAll missing")
-                end
+                        if not e2 then
+                            error(
+                                "bee.feedKingBeeAll missing"
+                            )
+                        end
 
-                if typeof(e1.FireServer) ~= "function" then
-                    error("npc.dialogueCompleted cannot FireServer")
-                end
+                        if typeof(e1.FireServer)
+                            ~= "function" then
 
-                if typeof(e2.FireServer) ~= "function" then
-                    error("bee.feedKingBeeAll cannot FireServer")
-                end
+                            error(
+                                "npc.dialogueCompleted " ..
+                                "cannot FireServer"
+                            )
+                        end
 
-                -- First event
-                e1:FireServer("KingBee")
+                        if typeof(e2.FireServer)
+                            ~= "function" then
 
-                -- Then feed
-                e2:FireServer()
+                            error(
+                                "bee.feedKingBeeAll " ..
+                                "cannot FireServer"
+                            )
+                        end
 
-            end)
+                        -- First
+                        e1:FireServer("KingBee")
 
-        end
-    )
+                        -- Then second
+                        e2:FireServer()
 
-    btnFeed.Position = UDim2.new(1, -38, 0.5, -15)
+                    end
+                )
+            end
+        )
+
+    btnFeed.Position =
+        UDim2.new(
+            1,
+            -38,
+            0.5,
+            -15
+        )
 
     --==================================================
     -- INITIAL DISPLAY
@@ -1394,46 +1682,18 @@ local startupSuccess, startupError = xpcall(function()
 
     for id = 1, 3 do
 
-        local ok, result = xpcall(
-            function()
-                return updateDisplay(id)
-            end,
-            function(e)
-                return debug.traceback(tostring(e), 2)
-            end
-        )
+        pcall(function()
+            updateDisplay(id)
+        end)
 
-        if not ok then
-            warn(
-                "[ActionGui] Initial update <" ..
-                dispNames[id] ..
-                "> failed:\n" ..
-                tostring(result)
-            )
-        end
     end
 
     --==================================================
-    -- LOCAL FALLBACK DATA
-    --==================================================
-    --
-    -- The old version attempted:
-    --
-    -- bee.fillingStarted:FireServer(...)
-    --
-    -- and:
-    --
-    -- state.sync:FireServer(...)
-    --
-    -- That does NOT invoke OnClientEvent locally.
-    --
-    -- These defaults simply populate the GUI if the game has
-    -- not sent the real recipe information yet.
-    --
-    -- Remove/change these values if you don't want defaults.
+    -- FALLBACK RECIPES
     --==================================================
 
     local fallbackRecipes = {
+
         [1] = {
             "BlueSpottedPuffer",
             "PufferFish"
@@ -1459,16 +1719,15 @@ local startupSuccess, startupError = xpcall(function()
                 fallbackRecipes[id][1],
                 fallbackRecipes[id][2]
             }
-
         end
-
     end
 
-    -- Update after fallback values
     for id = 1, 3 do
+
         pcall(function()
             updateDisplay(id)
         end)
+
     end
 
     --==================================================
@@ -1489,7 +1748,10 @@ local startupSuccess, startupError = xpcall(function()
             )
 
         frame.Size =
-            UDim2.fromOffset(FRAME_W, height)
+            UDim2.fromOffset(
+                FRAME_W,
+                height
+            )
     end
 
     layout:GetPropertyChangedSignal(
@@ -1521,12 +1783,12 @@ local startupSuccess, startupError = xpcall(function()
             return
         end
 
-        frame.Visible = not frame.Visible
-
+        frame.Visible =
+            not frame.Visible
     end)
 
     --==================================================
-    -- MAIN FRAME DRAG
+    -- MAIN DRAG
     --==================================================
 
     local drag = false
@@ -1535,8 +1797,10 @@ local startupSuccess, startupError = xpcall(function()
 
     title.InputBegan:Connect(function(input)
 
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType
+            == Enum.UserInputType.MouseButton1
+            or input.UserInputType
+            == Enum.UserInputType.Touch then
 
             drag = true
             dragStart = input.Position
@@ -1544,7 +1808,9 @@ local startupSuccess, startupError = xpcall(function()
 
             input.Changed:Connect(function()
 
-                if input.UserInputState == Enum.UserInputState.End then
+                if input.UserInputState
+                    == Enum.UserInputState.End then
+
                     drag = false
                 end
 
@@ -1558,20 +1824,24 @@ local startupSuccess, startupError = xpcall(function()
             return
         end
 
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement
-            and input.UserInputType ~= Enum.UserInputType.Touch then
+        if input.UserInputType
+            ~= Enum.UserInputType.MouseMovement
+            and input.UserInputType
+            ~= Enum.UserInputType.Touch then
+
             return
         end
 
-        local delta = input.Position - dragStart
+        local delta =
+            input.Position - dragStart
 
-        frame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-
+        frame.Position =
+            UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
     end)
 
     --==================================================
@@ -1583,7 +1853,10 @@ local startupSuccess, startupError = xpcall(function()
 
 end, function(e)
 
-    return debug.traceback(tostring(e), 2)
+    return debug.traceback(
+        tostring(e),
+        2
+    )
 
 end)
 
@@ -1601,11 +1874,12 @@ if not startupSuccess then
     if ErrorPanel then
 
         pcall(function()
+
             ErrorPanel:Add(
                 "Main.lua Startup",
                 startupError
             )
-        end)
 
+        end)
     end
 end
