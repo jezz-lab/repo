@@ -1,5 +1,6 @@
 --==================================================
 -- FARM A FISH | BEE EVENT
+-- Full GUI + Footer Notifications + Error Handling
 --==================================================
 
 local Players = game:GetService("Players")
@@ -8,8 +9,12 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Remove old GUI
+--==================================================
+-- REMOVE OLD GUI
+--==================================================
+
 local oldGui = playerGui:FindFirstChild("ActionGui")
+
 if oldGui then
 oldGui:Destroy()
 end
@@ -19,7 +24,7 @@ end
 --==================================================
 
 local FRAME_WIDTH = 240
-local MIN_HEIGHT = 120
+local MIN_HEIGHT = 150
 local MAX_HEIGHT = 500
 
 --==================================================
@@ -129,12 +134,15 @@ end)
 --==================================================
 
 local title = Instance.new("TextLabel")
+title.Name = "Title"
 title.Text = "Farm a Fish: Bee Event"
 title.TextColor3 = Color3.new(1, 1, 1)
 title.TextSize = 10
+title.Font = Enum.Font.GothamBold
 title.BackgroundTransparency = 1
-title.Size = UDim2.new(1, -50, 0, 40)
+title.Size = UDim2.new(1, -60, 0, 40)
 title.Position = UDim2.fromOffset(10, 0)
+title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = frame
 
 --==================================================
@@ -228,13 +236,13 @@ frame.Position = UDim2.new(
 end)
 
 --==================================================
--- BUTTON CONTAINER
+-- CONTENT CONTAINER
 --==================================================
 
 local buttonFrame = Instance.new("Frame")
 buttonFrame.Name = "Buttons"
 buttonFrame.BackgroundTransparency = 1
-buttonFrame.Size = UDim2.new(1, -20, 1, -50)
+buttonFrame.Size = UDim2.new(1, -20, 1, -95)
 buttonFrame.Position = UDim2.fromOffset(10, 45)
 buttonFrame.Parent = frame
 
@@ -244,7 +252,7 @@ layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Parent = buttonFrame
 
 --==================================================
--- SPEED INPUT ROW
+-- SPEED ROW
 --==================================================
 
 local speedRow = Instance.new("Frame")
@@ -290,6 +298,159 @@ speedInputCorner.CornerRadius = UDim.new(0, 5)
 speedInputCorner.Parent = speedInput
 
 --==================================================
+-- NOTIFICATION STATE
+--==================================================
+
+local notificationIcon = nil
+local notificationPopup = nil
+local notificationText = nil
+
+local lastNotification = "Ready"
+
+--==================================================
+-- SHOW NOTIFICATION
+--==================================================
+
+local function showNotification(message, success)
+lastNotification = tostring(message)
+
+```
+if notificationIcon then
+	if success then
+		notificationIcon.Text = "✓"
+	else
+		notificationIcon.Text = "⚠"
+	end
+end
+
+if notificationText then
+	notificationText.Text = lastNotification
+end
+```
+
+end
+
+--==================================================
+-- NOTIFICATION FOOTER
+--==================================================
+
+local footer = Instance.new("Frame")
+footer.Name = "NotificationFooter"
+footer.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
+footer.BorderSizePixel = 0
+footer.Size = UDim2.new(1, -20, 0, 35)
+footer.Position = UDim2.new(0, 10, 1, -45)
+footer.Parent = frame
+
+local footerCorner = Instance.new("UICorner")
+footerCorner.CornerRadius = UDim.new(0, 6)
+footerCorner.Parent = footer
+
+-- Notification icon
+notificationIcon = Instance.new("TextButton")
+notificationIcon.Name = "NotificationIcon"
+notificationIcon.Text = "✓"
+notificationIcon.TextColor3 = Color3.new(1, 1, 1)
+notificationIcon.TextSize = 18
+notificationIcon.Font = Enum.Font.GothamBold
+notificationIcon.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+notificationIcon.BorderSizePixel = 0
+notificationIcon.Size = UDim2.fromOffset(30, 30)
+notificationIcon.Position = UDim2.new(1, -33, 0.5, -15)
+notificationIcon.Parent = footer
+
+local notificationCorner = Instance.new("UICorner")
+notificationCorner.CornerRadius = UDim.new(0, 7)
+notificationCorner.Parent = notificationIcon
+
+-- Small footer status
+local footerLabel = Instance.new("TextLabel")
+footerLabel.Name = "FooterLabel"
+footerLabel.Text = "Status"
+footerLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+footerLabel.TextSize = 12
+footerLabel.Font = Enum.Font.Gotham
+footerLabel.BackgroundTransparency = 1
+footerLabel.Size = UDim2.new(1, -45, 1, 0)
+footerLabel.Position = UDim2.fromOffset(10, 0)
+footerLabel.TextXAlignment = Enum.TextXAlignment.Left
+footerLabel.Parent = footer
+
+--==================================================
+-- NOTIFICATION POPUP
+--==================================================
+
+notificationPopup = Instance.new("Frame")
+notificationPopup.Name = "NotificationPopup"
+notificationPopup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+notificationPopup.BorderSizePixel = 0
+notificationPopup.Size = UDim2.new(1, -20, 0, 55)
+notificationPopup.Position = UDim2.new(0, 10, 1, -105)
+notificationPopup.Visible = false
+notificationPopup.ZIndex = 10
+notificationPopup.Parent = frame
+
+local popupCorner = Instance.new("UICorner")
+popupCorner.CornerRadius = UDim.new(0, 6)
+popupCorner.Parent = notificationPopup
+
+notificationText = Instance.new("TextLabel")
+notificationText.Name = "NotificationText"
+notificationText.Text = "Ready"
+notificationText.TextColor3 = Color3.new(1, 1, 1)
+notificationText.TextSize = 12
+notificationText.Font = Enum.Font.Gotham
+notificationText.BackgroundTransparency = 1
+notificationText.Size = UDim2.new(1, -20, 1, -10)
+notificationText.Position = UDim2.fromOffset(10, 5)
+notificationText.TextWrapped = true
+notificationText.TextXAlignment = Enum.TextXAlignment.Left
+notificationText.TextYAlignment = Enum.TextYAlignment.Center
+notificationText.ZIndex = 11
+notificationText.Parent = notificationPopup
+
+--==================================================
+-- NOTIFICATION BUTTON
+--==================================================
+
+notificationIcon.MouseEnter:Connect(function()
+notificationIcon.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+end)
+
+notificationIcon.MouseLeave:Connect(function()
+notificationIcon.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+end)
+
+notificationIcon.MouseButton1Click:Connect(function()
+notificationPopup.Visible = not notificationPopup.Visible
+end)
+
+--==================================================
+-- SAFE ACTION RUNNER
+--==================================================
+
+local function runAction(actionName, callback)
+local success, result = pcall(callback)
+
+```
+if success then
+	showNotification(actionName .. " completed", true)
+	print("[" .. actionName .. "] completed")
+else
+	local errorMessage = tostring(result)
+
+	showNotification(
+		actionName .. " failed: " .. errorMessage,
+		false
+	)
+
+	warn("[" .. actionName .. "] failed:", errorMessage)
+end
+```
+
+end
+
+--==================================================
 -- ACTION ROW CREATOR
 --==================================================
 
@@ -324,7 +485,7 @@ label.Parent = row
 local actionButton = Instance.new("TextButton")
 actionButton.Name = "ActionButton"
 
--- Primary ASCII icon
+-- ASCII fallback icon
 actionButton.Text = ">"
 
 actionButton.TextColor3 = Color3.new(1, 1, 1)
@@ -359,8 +520,9 @@ actionButton.MouseButton1Up:Connect(function()
 	actionButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 end)
 
+-- Execute safely
 actionButton.MouseButton1Click:Connect(function()
-	callback()
+	runAction(name, callback)
 end)
 
 return actionButton
@@ -377,25 +539,22 @@ local character = player.Character
 
 ```
 if not character then
-	return
+	error("Character not found")
 end
 
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 
 if not humanoid then
-	return
+	error("Humanoid not found")
 end
 
 local speed = tonumber(speedInput.Text)
 
 if not speed then
-	warn("Please enter a valid number for speed.")
-	return
+	error("Invalid speed value")
 end
 
 humanoid.WalkSpeed = speed
-
-print("Speed set to:", speed)
 ```
 
 end)
@@ -409,9 +568,11 @@ local Event = game:GetService("ReplicatedStorage")
 .rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
 
 ```
-Event:FireServer(1)
+if not Event then
+	error("Dispenser event not found")
+end
 
-print("Insert Left clicked!")
+Event:FireServer(1)
 ```
 
 end)
@@ -425,9 +586,11 @@ local Event = game:GetService("ReplicatedStorage")
 .rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
 
 ```
-Event:FireServer(2)
+if not Event then
+	error("Dispenser event not found")
+end
 
-print("Insert Middle clicked!")
+Event:FireServer(2)
 ```
 
 end)
@@ -441,9 +604,11 @@ local Event = game:GetService("ReplicatedStorage")
 .rbxts_include.node_modules["@rbxts"].remo.src.container["bee.submitToDispenser"]
 
 ```
-Event:FireServer(3)
+if not Event then
+	error("Dispenser event not found")
+end
 
-print("Insert Right clicked!")
+Event:FireServer(3)
 ```
 
 end)
@@ -457,9 +622,11 @@ local Event = game:GetService("ReplicatedStorage")
 .rbxts_include.node_modules["@rbxts"].remo.src.container["shop.purchaseEventItem"]
 
 ```
-Event:FireServer("baitpack:Bee")
+if not Event then
+	error("Purchase event not found")
+end
 
-print("Purchase clicked!")
+Event:FireServer("baitpack:Bee")
 ```
 
 end)
@@ -476,13 +643,19 @@ local Event1 = game:GetService("ReplicatedStorage")
 local Event2 = game:GetService("ReplicatedStorage")
 	.rbxts_include.node_modules["@rbxts"].remo.src.container["bee.feedKingBeeAll"]
 
--- First
+if not Event1 then
+	error("King Bee dialogue event not found")
+end
+
+if not Event2 then
+	error("King Bee feed event not found")
+end
+
+-- First event
 Event1:FireServer("KingBee")
 
--- Second
+-- Second event
 Event2:FireServer()
-
-print("King Bee fed!")
 ```
 
 end)
@@ -496,17 +669,29 @@ local contentHeight = layout.AbsoluteContentSize.Y
 
 ```
 local newHeight = math.clamp(
-	contentHeight + 60,
+	contentHeight + 105,
 	MIN_HEIGHT,
 	MAX_HEIGHT
 )
 
-frame.Size = UDim2.fromOffset(FRAME_WIDTH, newHeight)
+frame.Size = UDim2.fromOffset(
+	FRAME_WIDTH,
+	newHeight
+)
 ```
 
 end
 
 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateHeight)
 
--- Initial height
+--==================================================
+-- INITIAL STATUS
+--==================================================
+
+showNotification("Ready", true)
+
+--==================================================
+-- INITIAL HEIGHT
+--==================================================
+
 updateHeight()
