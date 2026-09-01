@@ -37,7 +37,7 @@ local RESTOCK_BLINK_DURATION = 2
 
 local PURCHASE_INTERVAL = 0.05
 
-local ITEM_SCROLL_HEIGHT = 150
+local ITEM_SCROLL_HEIGHT = 180
 
 
 --==================================================
@@ -62,15 +62,16 @@ local SelectedItems = {}
 
 local CurrentStock = {}
 
-local Buying = {}
-
 local Categories = {}
 
 local BlinkToken = 0
 
 local Terminated = false
 
-local RestockDelayToken = 0   -- for debouncing delayed restock application
+local RestockDelayToken = 0
+
+local AutoBuyRunning = false
+local AutoBuyTask = nil
 
 
 --==================================================
@@ -549,22 +550,14 @@ local function IsNone(stock)
 end
 
 
+--==================================================
+-- UPDATED: GET STATUS TEXT (shows [0] for zero stock)
+--==================================================
+
 local function GetStatusText(stock)
-
-    if IsAvailable(stock) then
-
-        return "[" ..
-            tostring(stock) ..
-            "]"
+    if type(stock) == "number" then
+        return "[" .. tostring(stock) .. "]"
     end
-
-
-    if IsNone(stock) then
-
-        return "[Unavailable]"
-    end
-
-
     return "[Not Restocked]"
 end
 
@@ -643,7 +636,7 @@ end
 
 
 --==================================================
--- PURCHASE
+-- PURCHASE (with retry)
 --==================================================
 
 local function PurchaseItem(
@@ -888,220 +881,88 @@ end
 
 
 --==================================================
--- AUTO BUY
+-- NEW AUTO BUY (SINGLE LOOP)
 --==================================================
 
-local function AutoBuy(
-    category,
-    itemKey
-)
-
-    if not AUTO_BUY
-        or Terminated then
-
-        return
+local function PurchaseItemWithRetry(category, itemId, maxAttempts)
+    maxAttempts = maxAttempts or 3
+    for attempt = 1, maxAttempts do
+        if Terminated or not AutoBuyRunning then return false end
+        local success = PurchaseItem(category, itemId)
+        if success then return true end
+        task.wait(0.2)  -- wait before retry
     end
-
-
-    local key =
-        category
-        .. ":"
-        .. itemKey
-
-
-    if Buying[key] then
-        return
-    end
-
-
-    Buying[key] =
-        true
-
-
-    task.spawn(function()
-
-        while not Terminated
-            and AUTO_BUY do
-
-
-            --========================================
-            -- CHECK ITEM SELECTION
-            --========================================
-
-            if not SelectedItems[category]
-                or not SelectedItems[category][itemKey] then
-
-                break
-            end
-
-
-            --========================================
-            -- GET CURRENT SAVED STOCK
-            --========================================
-
-            local categoryStock =
-                CurrentStock[category]
-
-
-            if not categoryStock then
-                break
-            end
-
-
-            local stock =
-                categoryStock[itemKey]
-
-
-            --========================================
-            -- STOP AT ZERO
-            --========================================
-
-            if not IsAvailable(stock) then
-                break
-            end
-
-
-            --========================================
-            -- GET ITEM DATA
-            --========================================
-
-            local categoryData =
-                Categories[category]
-
-
-            if not categoryData then
-                break
-            end
-
-
-            local itemData =
-                categoryData.Items[itemKey]
-
-
-            if not itemData then
-                break
-            end
-
-
-            --========================================
-            -- PURCHASE USING REAL ID
-            --========================================
-
-            local purchaseSuccess =
-                PurchaseItem(
-                    category,
-                    itemData.ItemId
-                )
-
-
-            if not purchaseSuccess then
-                break
-            end
-
-
-            --========================================
-            -- DROP SAVED STOCK BY ONE
-            --========================================
-
-            local newStock =
-                math.max(
-                    stock - 1,
-                    0
-                )
-
-
-            CurrentStock[category][itemKey] =
-                newStock
-
-
-            --========================================
-            -- UPDATE GUI IMMEDIATELY
-            --========================================
-
-            UpdateItemVisual(
-                itemData,
-                newStock
-            )
-
-
-            --========================================
-            -- STOP WHEN ZERO
-            --========================================
-
-            if newStock <= 0 then
-                break
-            end
-
-
-            --========================================
-            -- NEXT PURCHASE
-            --========================================
-
-            task.wait(
-                PURCHASE_INTERVAL
-            )
-        end
-
-
-        Buying[key] =
-            nil
-    end)
+    return false
 end
 
-
---==================================================
--- SET SELECTED
---==================================================
-
-local function SetSelected(
-    category,
-    itemKey,
-    enabled
-)
-
-    SelectedItems[category] =
-        SelectedItems[category]
-        or {}
-
-
-    SelectedItems[category][itemKey] =
-        enabled
-
-
-    local categoryData =
-        Categories[category]
-
-
-    if categoryData then
-
-        local itemData =
-            categoryData.Items[itemKey]
-
-
-        if itemData then
-
-            local stock =
-                CurrentStock[category]
-                and CurrentStock[category][itemKey]
-
-
-            UpdateItemVisual(
-                itemData,
-                stock
-            )
+local function AutoBuyLoop()
+    while AutoBuyRunning and not Terminated do
+        local anyPurchased = false
+        -- Iterate over all categories in order
+        for _, category in ipairs(CategoryOrder) do
+            local selected = SelectedItems[category]
+            if selected then
+                local categoryStock = CurrentStock[category]
+                if categoryStock then
+                    for itemKey, enabled in pairs(selected) do
+                        if enabled and AutoBuyRunning and not Terminated then
+                            local stock = categoryStock[itemKey]
+                            if IsAvailable(stock) then
+                                local itemData = Categories[category] and Categories[category].Items[itemKey]
+                                if itemData then
+                                    -- Attempt purchase
+                                    if PurchaseItemWithRetry(category, itemData.ItemId, 3) then
+                                        -- Decrement stock
+                                        local newStock = math.max(stock - 1, 0)
+                                        CurrentStock[category][itemKey] = newStock
+                                        UpdateItemVisual(itemData, newStock)
+                                        anyPurchased = true
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        -- If nothing was bought, wait a bit before checking again (avoid busy loop)
+        if not anyPurchased then
+            task.wait(0.5)
+        else
+            task.wait(PURCHASE_INTERVAL)  -- small delay between purchase rounds
         end
     end
+end
 
+local function StartAutoBuy()
+    if AutoBuyRunning then return end
+    AutoBuyRunning = true
+    AutoBuyTask = task.spawn(AutoBuyLoop)
+end
 
-    -- Start immediately if Auto Buy is enabled.
-    if enabled
-        and AUTO_BUY then
+local function StopAutoBuy()
+    AutoBuyRunning = false
+    if AutoBuyTask then
+        task.cancel(AutoBuyTask)
+        AutoBuyTask = nil
+    end
+end
 
+--==================================================
+-- SET SELECTED (simplified)
+--==================================================
 
-        AutoBuy(
-            category,
-            itemKey
-        )
+local function SetSelected(category, itemKey, enabled)
+    SelectedItems[category] = SelectedItems[category] or {}
+    SelectedItems[category][itemKey] = enabled
+
+    local categoryData = Categories[category]
+    if categoryData then
+        local itemData = categoryData.Items[itemKey]
+        if itemData then
+            local stock = CurrentStock[category] and CurrentStock[category][itemKey]
+            UpdateItemVisual(itemData, stock)
+        end
     end
 end
 
@@ -2195,47 +2056,12 @@ local function ApplyShopData(
 
 
     --==============================================
-    -- RESUME AUTO BUY
+    -- RESTART AUTO BUY IF ENABLED
     --==============================================
 
-    if not AUTO_BUY then
-        return
-    end
-
-    -- Clear old buying flags so items can restart on restock
-    Buying = {}
-
-    for category, selected
-        in pairs(SelectedItems) do
-
-        if type(selected) == "table" then
-
-            local categoryStock =
-                CurrentStock[category]
-
-
-            if categoryStock then
-
-                for itemKey, enabled
-                    in pairs(selected) do
-
-                    if enabled then
-
-                        local stock =
-                            categoryStock[itemKey]
-
-
-                        if IsAvailable(stock) then
-
-                            AutoBuy(
-                                category,
-                                itemKey
-                            )
-                        end
-                    end
-                end
-            end
-        end
+    if AUTO_BUY then
+        StopAutoBuy()
+        StartAutoBuy()
     end
 end
 
@@ -2332,43 +2158,7 @@ AutoBuyButton.MouseButton1Click:Connect(
                     1
                 )
 
-
-            -- Start currently stocked selected items.
-
-            for category, selected
-                in pairs(SelectedItems) do
-
-
-                local categoryStock =
-                    CurrentStock[category]
-
-
-                if categoryStock then
-
-
-                    for itemKey, enabled
-                        in pairs(selected) do
-
-
-                        if enabled then
-
-
-                            local stock =
-                                categoryStock[itemKey]
-
-
-                            if IsAvailable(stock) then
-
-
-                                AutoBuy(
-                                    category,
-                                    itemKey
-                                )
-                            end
-                        end
-                    end
-                end
-            end
+            StartAutoBuy()
 
         else
 
@@ -2381,6 +2171,8 @@ AutoBuyButton.MouseButton1Click:Connect(
                     200,
                     200
                 )
+
+            StopAutoBuy()
         end
     end
 )
@@ -2546,6 +2338,9 @@ CloseButton.MouseButton1Click:Connect(
             false
 
 
+        StopAutoBuy()
+
+
         BlinkToken += 1
 
 
@@ -2554,10 +2349,6 @@ CloseButton.MouseButton1Click:Connect(
 
 
         CurrentStock =
-            {}
-
-
-        Buying =
             {}
 
 
