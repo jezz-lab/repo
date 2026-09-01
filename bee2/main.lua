@@ -1,5 +1,4 @@
 --Farm a fish: bee event (change title in the "TITLE")
-
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
 --==================================================
@@ -34,20 +33,26 @@ local RemoContainer =
         .src
         .container
 
-local StateSync = RemoContainer["state.sync"]
+local StateSync =
+    RemoContainer["state.sync"]
 
+-- Event shop
 local PurchaseEvent =
     RemoContainer["shop.purchaseEventItem"]
 
+-- Gear shop
 local PurchaseGear =
     RemoContainer["shop.purchaseGear"]
 
+-- Egg shop
 local PurchaseEgg =
     RemoContainer["shop.purchaseEgg"]
 
+-- Bait shop
 local PurchaseBait =
     RemoContainer["shop.purchaseBait"]
 
+-- King Bee
 local FeedKingBeeEvent =
     RemoContainer["bee.feedKingBeeAll"]
 
@@ -62,14 +67,14 @@ local SHOP_JSON_URL =
 local DEFAULT_SPEED = 16
 local SPEED = DEFAULT_SPEED
 
-local AUTO_RUNNING = false
+local AUTO_BUY = false
 
 local RESTOCK_BLINK_DURATION = 2
 
 local STATE_CHECK_INTERVAL = 0.03
 local PURCHASE_CONFIRM_TIMEOUT = 2
 
-local ITEM_SCROLL_HEIGHT = 150
+local ITEM_SCROLL_HEIGHT = 180
 
 
 --==================================================
@@ -91,12 +96,15 @@ local CategoryOrder = {
 local ShopItems = {}
 
 local SelectedItems = {}
+
 local CurrentStock = {}
 
 local Buying = {}
+
 local Categories = {}
 
 local BlinkToken = 0
+
 local Terminated = false
 
 
@@ -104,260 +112,897 @@ local Terminated = false
 -- GUI
 --==================================================
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ShopRestockGUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = PlayerGui
+local ScreenGui =
+    Instance.new("ScreenGui")
+
+ScreenGui.Name =
+    "ShopRestockGUI"
+
+ScreenGui.ResetOnSpawn =
+    false
+
+ScreenGui.ZIndexBehavior =
+    Enum.ZIndexBehavior.Sibling
+
+ScreenGui.Parent =
+    PlayerGui
 
 
 --==================================================
 -- MAIN
 --==================================================
 
-local Main = Instance.new("Frame")
-Main.Name = "Main"
-Main.Size = UDim2.fromOffset(320, 460)
-Main.Position = UDim2.new(0.5, -210, 0.5, -325)
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.BorderSizePixel = 0
-Main.ClipsDescendants = true
-Main.Parent = ScreenGui
+local Main =
+    Instance.new("Frame")
 
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
-MainCorner.Parent = Main
+Main.Name =
+    "Main"
+
+Main.Size =
+    UDim2.fromOffset(320, 450)
+
+Main.Position =
+    UDim2.new(
+        0.5,
+        -210,
+        0.5,
+        -325
+    )
+
+Main.BackgroundColor3 =
+    Color3.fromRGB(25, 25, 25)
+
+Main.BorderSizePixel =
+    0
+
+Main.ClipsDescendants =
+    true
+
+Main.Parent =
+    ScreenGui
+
+
+local MainCorner =
+    Instance.new("UICorner")
+
+MainCorner.CornerRadius =
+    UDim.new(0, 8)
+
+MainCorner.Parent =
+    Main
 
 
 --==================================================
 -- TITLE BAR
 --==================================================
 
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 42)
-TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-TitleBar.BorderSizePixel = 0
-TitleBar.ZIndex = 20
-TitleBar.Parent = Main
+local TitleBar =
+    Instance.new("Frame")
 
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 8)
-TitleCorner.Parent = TitleBar
+TitleBar.Name =
+    "TitleBar"
+
+TitleBar.Size =
+    UDim2.new(1, 0, 0, 42)
+
+TitleBar.BackgroundColor3 =
+    Color3.fromRGB(35, 35, 35)
+
+TitleBar.BorderSizePixel =
+    0
+
+TitleBar.ZIndex =
+    20
+
+TitleBar.Parent =
+    Main
+
+
+local TitleCorner =
+    Instance.new("UICorner")
+
+TitleCorner.CornerRadius =
+    UDim.new(0, 8)
+
+TitleCorner.Parent =
+    TitleBar
 
 
 --==================================================
 -- RESTOCK DOT
 --==================================================
 
-local RestockDot = Instance.new("Frame")
-RestockDot.Name = "RestockDot"
-RestockDot.Size = UDim2.fromOffset(9, 9)
-RestockDot.Position = UDim2.fromOffset(10, 16)
-RestockDot.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-RestockDot.BorderSizePixel = 0
-RestockDot.Visible = false
-RestockDot.ZIndex = 21
-RestockDot.Parent = TitleBar
+local RestockDot =
+    Instance.new("Frame")
 
-local DotCorner = Instance.new("UICorner")
-DotCorner.CornerRadius = UDim.new(1, 0)
-DotCorner.Parent = RestockDot
+RestockDot.Name =
+    "RestockDot"
+
+RestockDot.Size =
+    UDim2.fromOffset(9, 9)
+
+RestockDot.Position =
+    UDim2.fromOffset(10, 16)
+
+RestockDot.BackgroundColor3 =
+    Color3.fromRGB(0, 255, 0)
+
+RestockDot.BorderSizePixel =
+    0
+
+RestockDot.Visible =
+    false
+
+RestockDot.ZIndex =
+    21
+
+RestockDot.Parent =
+    TitleBar
+
+
+local DotCorner =
+    Instance.new("UICorner")
+
+DotCorner.CornerRadius =
+    UDim.new(1, 0)
+
+DotCorner.Parent =
+    RestockDot
 
 
 --==================================================
 -- TITLE
 --==================================================
 
-local Title = Instance.new("TextLabel")
-Title.Name = "Title"
-Title.Position = UDim2.fromOffset(26, 0)
-Title.Size = UDim2.new(1, -70, 1, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Farm a Fish: Bee Event 2"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.ZIndex = 21
-Title.Parent = TitleBar
+local Title =
+    Instance.new("TextLabel")
+
+Title.Name =
+    "Title"
+
+Title.Position =
+    UDim2.fromOffset(26, 0)
+
+Title.Size =
+    UDim2.new(1, -70, 1, 0)
+
+Title.BackgroundTransparency =
+    1
+
+Title.Text =
+    "Farm a Fish: Bee Event 2"
+
+Title.TextColor3 =
+    Color3.new(1, 1, 1)
+
+Title.TextSize =
+    20
+
+Title.Font =
+    Enum.Font.GothamBold
+
+Title.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+Title.ZIndex =
+    21
+
+Title.Parent =
+    TitleBar
 
 
 --==================================================
 -- CLOSE BUTTON
 --==================================================
 
-local CloseButton = Instance.new("TextButton")
-CloseButton.Name = "CloseButton"
-CloseButton.Size = UDim2.fromOffset(34, 34)
-CloseButton.Position = UDim2.new(1, -39, 0, 4)
-CloseButton.BackgroundColor3 = Color3.fromRGB(170, 50, 50)
-CloseButton.BorderSizePixel = 0
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.new(1, 1, 1)
-CloseButton.TextSize = 16
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.ZIndex = 22
-CloseButton.Parent = TitleBar
+local CloseButton =
+    Instance.new("TextButton")
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseButton
+CloseButton.Name =
+    "CloseButton"
+
+CloseButton.Size =
+    UDim2.fromOffset(34, 34)
+
+CloseButton.Position =
+    UDim2.new(1, -39, 0, 4)
+
+CloseButton.BackgroundColor3 =
+    Color3.fromRGB(170, 50, 50)
+
+CloseButton.BorderSizePixel =
+    0
+
+CloseButton.Text =
+    "X"
+
+CloseButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+CloseButton.TextSize =
+    16
+
+CloseButton.Font =
+    Enum.Font.GothamBold
+
+CloseButton.ZIndex =
+    22
+
+CloseButton.Parent =
+    TitleBar
+
+
+local CloseCorner =
+    Instance.new("UICorner")
+
+CloseCorner.CornerRadius =
+    UDim.new(0, 6)
+
+CloseCorner.Parent =
+    CloseButton
 
 
 --==================================================
 -- MAIN SCROLL
 --==================================================
 
-local MainScroll = Instance.new("ScrollingFrame")
-MainScroll.Name = "MainScroll"
-MainScroll.Position = UDim2.fromOffset(0, 42)
-MainScroll.Size = UDim2.new(1, 0, 1, -42)
-MainScroll.BackgroundTransparency = 1
-MainScroll.BorderSizePixel = 0
-MainScroll.ScrollBarThickness = 6
-MainScroll.ScrollingDirection = Enum.ScrollingDirection.Y
-MainScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-MainScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-MainScroll.Parent = Main
+local MainScroll =
+    Instance.new("ScrollingFrame")
 
-local MainPadding = Instance.new("UIPadding")
-MainPadding.PaddingTop = UDim.new(0, 10)
-MainPadding.PaddingBottom = UDim.new(0, 10)
-MainPadding.PaddingLeft = UDim.new(0, 10)
-MainPadding.PaddingRight = UDim.new(0, 10)
-MainPadding.Parent = MainScroll
+MainScroll.Name =
+    "MainScroll"
 
-local MainLayout = Instance.new("UIListLayout")
-MainLayout.Padding = UDim.new(0, 6)
-MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
-MainLayout.Parent = MainScroll
+MainScroll.Position =
+    UDim2.fromOffset(0, 42)
+
+MainScroll.Size =
+    UDim2.new(1, 0, 1, -42)
+
+MainScroll.BackgroundTransparency =
+    1
+
+MainScroll.BorderSizePixel =
+    0
+
+MainScroll.ScrollBarThickness =
+    6
+
+MainScroll.ScrollingDirection =
+    Enum.ScrollingDirection.Y
+
+MainScroll.AutomaticCanvasSize =
+    Enum.AutomaticSize.Y
+
+MainScroll.CanvasSize =
+    UDim2.new(0, 0, 0, 0)
+
+MainScroll.Parent =
+    Main
 
 
---==================================================
--- SPEED
---==================================================
+local MainPadding =
+    Instance.new("UIPadding")
 
-local SpeedFrame = Instance.new("Frame")
-SpeedFrame.Name = "SpeedFrame"
-SpeedFrame.LayoutOrder = 1
-SpeedFrame.Size = UDim2.new(1, -2, 0, 42)
-SpeedFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-SpeedFrame.BorderSizePixel = 0
-SpeedFrame.Parent = MainScroll
+MainPadding.PaddingTop =
+    UDim.new(0, 10)
 
-local SpeedCorner = Instance.new("UICorner")
-SpeedCorner.CornerRadius = UDim.new(0, 6)
-SpeedCorner.Parent = SpeedFrame
+MainPadding.PaddingBottom =
+    UDim.new(0, 10)
 
-local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Position = UDim2.fromOffset(10, 0)
-SpeedLabel.Size = UDim2.fromOffset(60, 42)
-SpeedLabel.BackgroundTransparency = 1
-SpeedLabel.Text = "Speed"
-SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
-SpeedLabel.TextSize = 14
-SpeedLabel.Font = Enum.Font.GothamBold
-SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
-SpeedLabel.Parent = SpeedFrame
+MainPadding.PaddingLeft =
+    UDim.new(0, 10)
 
-local SpeedBox = Instance.new("TextBox")
-SpeedBox.Name = "SpeedBox"
-SpeedBox.Position = UDim2.fromOffset(70, 6)
-SpeedBox.Size = UDim2.fromOffset(65, 30)
-SpeedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SpeedBox.BorderSizePixel = 0
-SpeedBox.Text = tostring(SPEED)
-SpeedBox.TextColor3 = Color3.new(1, 1, 1)
-SpeedBox.TextSize = 14
-SpeedBox.Font = Enum.Font.Gotham
-SpeedBox.ClearTextOnFocus = false
-SpeedBox.TextXAlignment = Enum.TextXAlignment.Center
-SpeedBox.Parent = SpeedFrame
+MainPadding.PaddingRight =
+    UDim.new(0, 10)
 
-local SpeedBoxCorner = Instance.new("UICorner")
-SpeedBoxCorner.CornerRadius = UDim.new(0, 4)
-SpeedBoxCorner.Parent = SpeedBox
+MainPadding.Parent =
+    MainScroll
+
+
+local MainLayout =
+    Instance.new("UIListLayout")
+
+MainLayout.Padding =
+    UDim.new(0, 6)
+
+MainLayout.SortOrder =
+    Enum.SortOrder.LayoutOrder
+
+MainLayout.Parent =
+    MainScroll
 
 
 --==================================================
--- SET SPEED BUTTON
+-- SPEED FRAME
 --==================================================
 
-local SetSpeedButton = Instance.new("TextButton")
-SetSpeedButton.Name = "SetSpeedButton"
-SetSpeedButton.Position = UDim2.new(1, -95, 0, 6)
-SetSpeedButton.Size = UDim2.fromOffset(85, 30)
-SetSpeedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SetSpeedButton.BorderSizePixel = 0
-SetSpeedButton.Text = "Set"
-SetSpeedButton.TextColor3 = Color3.new(1, 1, 1)
-SetSpeedButton.TextSize = 14
-SetSpeedButton.Font = Enum.Font.GothamBold
-SetSpeedButton.Parent = SpeedFrame
+local SpeedFrame =
+    Instance.new("Frame")
 
-local SetSpeedCorner = Instance.new("UICorner")
-SetSpeedCorner.CornerRadius = UDim.new(0, 4)
-SetSpeedCorner.Parent = SetSpeedButton
+SpeedFrame.Name =
+    "SpeedFrame"
+
+SpeedFrame.LayoutOrder =
+    1
+
+SpeedFrame.Size =
+    UDim2.new(1, -2, 0, 42)
+
+SpeedFrame.BackgroundColor3 =
+    Color3.fromRGB(35, 35, 35)
+
+SpeedFrame.BorderSizePixel =
+    0
+
+SpeedFrame.Parent =
+    MainScroll
+
+
+local SpeedCorner =
+    Instance.new("UICorner")
+
+SpeedCorner.CornerRadius =
+    UDim.new(0, 6)
+
+SpeedCorner.Parent =
+    SpeedFrame
+
+
+--==================================================
+-- SPEED LABEL
+--==================================================
+
+local SpeedLabel =
+    Instance.new("TextLabel")
+
+SpeedLabel.Position =
+    UDim2.fromOffset(10, 0)
+
+SpeedLabel.Size =
+    UDim2.fromOffset(55, 42)
+
+SpeedLabel.BackgroundTransparency =
+    1
+
+SpeedLabel.Text =
+    "Speed"
+
+SpeedLabel.TextColor3 =
+    Color3.new(1, 1, 1)
+
+SpeedLabel.TextSize =
+    14
+
+SpeedLabel.Font =
+    Enum.Font.GothamBold
+
+SpeedLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+SpeedLabel.Parent =
+    SpeedFrame
+
+
+--==================================================
+-- SPEED TEXTBOX
+--==================================================
+
+local SpeedBox =
+    Instance.new("TextBox")
+
+SpeedBox.Name =
+    "SpeedBox"
+
+SpeedBox.Position =
+    UDim2.fromOffset(65, 6)
+
+SpeedBox.Size =
+    UDim2.fromOffset(75, 30)
+
+SpeedBox.BackgroundColor3 =
+    Color3.fromRGB(45, 45, 45)
+
+SpeedBox.BorderSizePixel =
+    0
+
+SpeedBox.Text =
+    tostring(SPEED)
+
+SpeedBox.TextColor3 =
+    Color3.new(1, 1, 1)
+
+SpeedBox.TextSize =
+    14
+
+SpeedBox.Font =
+    Enum.Font.Gotham
+
+SpeedBox.ClearTextOnFocus =
+    false
+
+SpeedBox.TextXAlignment =
+    Enum.TextXAlignment.Center
+
+SpeedBox.Parent =
+    SpeedFrame
+
+
+local SpeedBoxCorner =
+    Instance.new("UICorner")
+
+SpeedBoxCorner.CornerRadius =
+    UDim.new(0, 4)
+
+SpeedBoxCorner.Parent =
+    SpeedBox
+
+
+--==================================================
+-- SPEED SET BUTTON
+--==================================================
+
+local SetSpeedButton =
+    Instance.new("TextButton")
+
+SetSpeedButton.Name =
+    "SetSpeed"
+
+SetSpeedButton.Position =
+    UDim2.fromOffset(146, 6)
+
+SetSpeedButton.Size =
+    UDim2.fromOffset(60, 30)
+
+SetSpeedButton.BackgroundColor3 =
+    Color3.fromRGB(45, 45, 45)
+
+SetSpeedButton.BorderSizePixel =
+    0
+
+SetSpeedButton.Text =
+    "Set"
+
+SetSpeedButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+SetSpeedButton.TextSize =
+    14
+
+SetSpeedButton.Font =
+    Enum.Font.GothamBold
+
+SetSpeedButton.Parent =
+    SpeedFrame
+
+
+local SetSpeedCorner =
+    Instance.new("UICorner")
+
+SetSpeedCorner.CornerRadius =
+    UDim.new(0, 4)
+
+SetSpeedCorner.Parent =
+    SetSpeedButton
 
 
 --==================================================
 -- DEFAULT
 --==================================================
 
-local DefaultButton = Instance.new("TextButton")
-DefaultButton.Name = "DefaultButton"
-DefaultButton.LayoutOrder = 2
-DefaultButton.Size = UDim2.new(1, -2, 0, 36)
-DefaultButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-DefaultButton.BorderSizePixel = 0
-DefaultButton.Text = "Default"
-DefaultButton.TextColor3 = Color3.new(1, 1, 1)
-DefaultButton.TextSize = 14
-DefaultButton.Font = Enum.Font.GothamBold
-DefaultButton.Parent = MainScroll
+local DefaultButton =
+    Instance.new("TextButton")
 
-local DefaultCorner = Instance.new("UICorner")
-DefaultCorner.CornerRadius = UDim.new(0, 6)
-DefaultCorner.Parent = DefaultButton
+DefaultButton.Name =
+    "DefaultButton"
+
+DefaultButton.LayoutOrder =
+    2
+
+DefaultButton.Size =
+    UDim2.new(1, -2, 0, 36)
+
+DefaultButton.BackgroundColor3 =
+    Color3.fromRGB(35, 35, 35)
+
+DefaultButton.BorderSizePixel =
+    0
+
+DefaultButton.Text =
+    "Default"
+
+DefaultButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+DefaultButton.TextSize =
+    14
+
+DefaultButton.Font =
+    Enum.Font.GothamBold
+
+DefaultButton.Parent =
+    MainScroll
+
+
+local DefaultCorner =
+    Instance.new("UICorner")
+
+DefaultCorner.CornerRadius =
+    UDim.new(0, 6)
+
+DefaultCorner.Parent =
+    DefaultButton
 
 
 --==================================================
 -- FEED KING BEE
 --==================================================
 
-local FeedButton = Instance.new("TextButton")
-FeedButton.Name = "FeedKingBee"
-FeedButton.LayoutOrder = 3
-FeedButton.Size = UDim2.new(1, -2, 0, 40)
-FeedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-FeedButton.BorderSizePixel = 0
-FeedButton.Text = "Feed King Bee"
-FeedButton.TextColor3 = Color3.new(1, 1, 1)
-FeedButton.TextSize = 14
-FeedButton.Font = Enum.Font.GothamBold
-FeedButton.Parent = MainScroll
+local FeedButton =
+    Instance.new("TextButton")
 
-local FeedCorner = Instance.new("UICorner")
-FeedCorner.CornerRadius = UDim.new(0, 6)
-FeedCorner.Parent = FeedButton
+FeedButton.Name =
+    "FeedKingBee"
+
+FeedButton.LayoutOrder =
+    3
+
+FeedButton.Size =
+    UDim2.new(1, -2, 0, 40)
+
+FeedButton.BackgroundColor3 =
+    Color3.fromRGB(45, 45, 45)
+
+FeedButton.BorderSizePixel =
+    0
+
+FeedButton.Text =
+    "Feed King Bee"
+
+FeedButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+FeedButton.TextSize =
+    14
+
+FeedButton.Font =
+    Enum.Font.GothamBold
+
+FeedButton.Parent =
+    MainScroll
+
+
+local FeedCorner =
+    Instance.new("UICorner")
+
+FeedCorner.CornerRadius =
+    UDim.new(0, 6)
+
+FeedCorner.Parent =
+    FeedButton
 
 
 --==================================================
 -- SHOP RESTOCK HEADER
 --==================================================
 
-local ShopHeader = Instance.new("TextLabel")
-ShopHeader.Name = "ShopRestockHeader"
-ShopHeader.LayoutOrder = 4
-ShopHeader.Size = UDim2.new(1, -2, 0, 30)
-ShopHeader.BackgroundTransparency = 1
-ShopHeader.Text = "SHOP RESTOCK"
-ShopHeader.TextColor3 = Color3.new(1, 1, 1)
-ShopHeader.TextSize = 14
-ShopHeader.Font = Enum.Font.GothamBold
-ShopHeader.TextXAlignment = Enum.TextXAlignment.Left
-ShopHeader.Parent = MainScroll
+local ShopHeader =
+    Instance.new("TextLabel")
+
+ShopHeader.Name =
+    "ShopRestockHeader"
+
+ShopHeader.LayoutOrder =
+    4
+
+ShopHeader.Size =
+    UDim2.new(1, -2, 0, 30)
+
+ShopHeader.BackgroundTransparency =
+    1
+
+ShopHeader.Text =
+    "SHOP RESTOCK"
+
+ShopHeader.TextColor3 =
+    Color3.new(1, 1, 1)
+
+ShopHeader.TextSize =
+    14
+
+ShopHeader.Font =
+    Enum.Font.GothamBold
+
+ShopHeader.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+ShopHeader.Parent =
+    MainScroll
+
+
+--==================================================
+-- AUTO BUY FRAME
+--==================================================
+
+local AutoBuyFrame =
+    Instance.new("Frame")
+
+AutoBuyFrame.Name =
+    "AutoBuyFrame"
+
+AutoBuyFrame.LayoutOrder =
+    5
+
+AutoBuyFrame.Size =
+    UDim2.new(1, -2, 0, 40)
+
+AutoBuyFrame.BackgroundColor3 =
+    Color3.fromRGB(35, 35, 35)
+
+AutoBuyFrame.BorderSizePixel =
+    0
+
+AutoBuyFrame.Parent =
+    MainScroll
+
+
+local AutoBuyCorner =
+    Instance.new("UICorner")
+
+AutoBuyCorner.CornerRadius =
+    UDim.new(0, 6)
+
+AutoBuyCorner.Parent =
+    AutoBuyFrame
+
+
+--==================================================
+-- AUTO BUY LABEL
+--==================================================
+
+local AutoBuyLabel =
+    Instance.new("TextLabel")
+
+AutoBuyLabel.Name =
+    "Label"
+
+AutoBuyLabel.Position =
+    UDim2.fromOffset(10, 0)
+
+AutoBuyLabel.Size =
+    UDim2.new(1, -60, 1, 0)
+
+AutoBuyLabel.BackgroundTransparency =
+    1
+
+AutoBuyLabel.Text =
+    "Auto Buy"
+
+AutoBuyLabel.TextColor3 =
+    Color3.new(1, 1, 1)
+
+AutoBuyLabel.TextSize =
+    14
+
+AutoBuyLabel.Font =
+    Enum.Font.GothamBold
+
+AutoBuyLabel.TextXAlignment =
+    Enum.TextXAlignment.Left
+
+AutoBuyLabel.Parent =
+    AutoBuyFrame
+
+
+--==================================================
+-- AUTO BUY CHECKBOX
+--==================================================
+
+local AutoBuyButton =
+    Instance.new("TextButton")
+
+AutoBuyButton.Name =
+    "Toggle"
+
+AutoBuyButton.Size =
+    UDim2.fromOffset(36, 30)
+
+AutoBuyButton.Position =
+    UDim2.new(1, -46, 0, 5)
+
+AutoBuyButton.BackgroundColor3 =
+    Color3.fromRGB(45, 45, 45)
+
+AutoBuyButton.BorderSizePixel =
+    0
+
+AutoBuyButton.Text =
+    "/"
+
+AutoBuyButton.TextColor3 =
+    Color3.fromRGB(200, 200, 200)
+
+AutoBuyButton.TextSize =
+    18
+
+AutoBuyButton.Font =
+    Enum.Font.GothamBold
+
+AutoBuyButton.Parent =
+    AutoBuyFrame
+
+
+local AutoBuyCorner2 =
+    Instance.new("UICorner")
+
+AutoBuyCorner2.CornerRadius =
+    UDim.new(0, 5)
+
+AutoBuyCorner2.Parent =
+    AutoBuyButton
+
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function MakeDraggable(object, dragHandle)
+
+    dragHandle =
+        dragHandle or object
+
+    local dragging =
+        false
+
+    local dragStart
+
+    local startPosition
+
+
+    dragHandle.InputBegan:Connect(function(input)
+
+        if Terminated then
+            return
+        end
+
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+            and input.UserInputType ~= Enum.UserInputType.Touch then
+
+            return
+        end
+
+
+        dragging =
+            true
+
+        dragStart =
+            input.Position
+
+        startPosition =
+            object.Position
+
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState ==
+                Enum.UserInputState.End then
+
+                dragging =
+                    false
+            end
+        end)
+    end)
+
+
+    UserInputService.InputChanged:Connect(function(input)
+
+        if not dragging
+            or Terminated then
+
+            return
+        end
+
+
+        if input.UserInputType ~=
+            Enum.UserInputType.MouseMovement
+
+            and input.UserInputType ~=
+            Enum.UserInputType.Touch then
+
+            return
+        end
+
+
+        local delta =
+            input.Position - dragStart
+
+
+        object.Position =
+            UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+    end)
+end
+
+
+MakeDraggable(
+    Main,
+    TitleBar
+)
+
+
+--==================================================
+-- FLOATING TOGGLE
+--==================================================
+
+local ToggleButton =
+    Instance.new("TextButton")
+
+ToggleButton.Name =
+    "ToggleIcon"
+
+ToggleButton.Size =
+    UDim2.fromOffset(52, 52)
+
+ToggleButton.Position =
+    UDim2.new(
+        0,
+        20,
+        0.5,
+        -26
+    )
+
+ToggleButton.BackgroundColor3 =
+    Color3.fromRGB(40, 40, 40)
+
+ToggleButton.BorderSizePixel =
+    0
+
+ToggleButton.Text =
+    "S"
+
+ToggleButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+ToggleButton.TextSize =
+    24
+
+ToggleButton.Font =
+    Enum.Font.GothamBold
+
+ToggleButton.ZIndex =
+    30
+
+ToggleButton.Parent =
+    ScreenGui
+
+
+local ToggleCorner =
+    Instance.new("UICorner")
+
+ToggleCorner.CornerRadius =
+    UDim.new(1, 0)
+
+ToggleCorner.Parent =
+    ToggleButton
+
+
+MakeDraggable(
+    ToggleButton
+)
+
+
+ToggleButton.MouseButton1Click:Connect(function()
+
+    if Terminated then
+        return
+    end
+
+    Main.Visible =
+        not Main.Visible
+end)
 
 
 --==================================================
@@ -381,132 +1026,59 @@ end
 local function GetStatusText(stock)
 
     if IsAvailable(stock) then
-        return "[" .. tostring(stock) .. "]"
+
+        return "[" ..
+            tostring(stock) ..
+            "]"
     end
 
+
     if IsNone(stock) then
+
         return "[Unavailable]"
     end
+
 
     return "[Not Restocked]"
 end
 
 
 --==================================================
--- DRAG
---==================================================
-
-local function MakeDraggable(object, dragHandle)
-
-    dragHandle = dragHandle or object
-
-    local dragging = false
-    local dragStart
-    local startPosition
-
-    dragHandle.InputBegan:Connect(function(input)
-
-        if Terminated then
-            return
-        end
-
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1
-            and input.UserInputType ~= Enum.UserInputType.Touch then
-            return
-        end
-
-        dragging = true
-        dragStart = input.Position
-        startPosition = object.Position
-
-        input.Changed:Connect(function()
-
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-
-        if not dragging or Terminated then
-            return
-        end
-
-        if input.UserInputType ~= Enum.UserInputType.MouseMovement
-            and input.UserInputType ~= Enum.UserInputType.Touch then
-            return
-        end
-
-        local delta =
-            input.Position - dragStart
-
-        object.Position = UDim2.new(
-            startPosition.X.Scale,
-            startPosition.X.Offset + delta.X,
-            startPosition.Y.Scale,
-            startPosition.Y.Offset + delta.Y
-        )
-    end)
-end
-
-MakeDraggable(Main, TitleBar)
-
-
---==================================================
--- FLOATING TOGGLE
---==================================================
-
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Name = "ToggleIcon"
-ToggleButton.Size = UDim2.fromOffset(52, 52)
-ToggleButton.Position = UDim2.new(0, 20, 0.5, -26)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-ToggleButton.BorderSizePixel = 0
-ToggleButton.Text = "S"
-ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.TextSize = 24
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.ZIndex = 30
-ToggleButton.Parent = ScreenGui
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(1, 0)
-ToggleCorner.Parent = ToggleButton
-
-MakeDraggable(ToggleButton)
-
-ToggleButton.MouseButton1Click:Connect(function()
-
-    if Terminated then
-        return
-    end
-
-    Main.Visible = not Main.Visible
-end)
-
-
---==================================================
 -- CATEGORY PURCHASE
 --==================================================
 
-local function PurchaseItem(category, itemName)
+local function PurchaseItem(
+    category,
+    itemName
+)
 
     if category == "event" then
 
-        PurchaseEvent:FireServer(itemName)
+        PurchaseEvent:FireServer(
+            itemName
+        )
+
 
     elseif category == "gear" then
 
-        PurchaseGear:FireServer(itemName)
+        PurchaseGear:FireServer(
+            itemName
+        )
+
 
     elseif category == "eggs" then
 
-        PurchaseEgg:FireServer(itemName)
+        PurchaseEgg:FireServer(
+            itemName
+        )
+
 
     elseif category == "bait" then
 
-        PurchaseBait:FireServer(itemName)
+        PurchaseBait:FireServer(
+            itemName
+        )
+
 
     else
 
@@ -529,17 +1101,26 @@ local function ApplySpeed()
         return
     end
 
-    local Character = Player.Character
+
+    local Character =
+        Player.Character
+
 
     if not Character then
         return
     end
 
+
     local Humanoid =
-        Character:FindFirstChildOfClass("Humanoid")
+        Character:FindFirstChildOfClass(
+            "Humanoid"
+        )
+
 
     if Humanoid then
-        Humanoid.WalkSpeed = SPEED
+
+        Humanoid.WalkSpeed =
+            SPEED
     end
 end
 
@@ -552,44 +1133,67 @@ local function BlinkRestockDot()
 
     BlinkToken += 1
 
-    local token = BlinkToken
+    local token =
+        BlinkToken
+
 
     task.spawn(function()
 
         local endTime =
-            os.clock() + RESTOCK_BLINK_DURATION
+            os.clock()
+            + RESTOCK_BLINK_DURATION
 
-        local green = true
+
+        local green =
+            true
+
 
         while os.clock() < endTime do
 
             if Terminated
                 or token ~= BlinkToken then
+
                 return
             end
 
-            RestockDot.Visible = true
+
+            RestockDot.Visible =
+                true
+
 
             if green then
 
                 RestockDot.BackgroundColor3 =
-                    Color3.fromRGB(0, 255, 0)
+                    Color3.fromRGB(
+                        0,
+                        255,
+                        0
+                    )
 
             else
 
                 RestockDot.BackgroundColor3 =
-                    Color3.fromRGB(255, 0, 0)
+                    Color3.fromRGB(
+                        255,
+                        0,
+                        0
+                    )
             end
 
-            green = not green
+
+            green =
+                not green
+
 
             task.wait(0.15)
         end
 
+
         if not Terminated
             and token == BlinkToken then
 
-            RestockDot.Visible = false
+            RestockDot.Visible =
+                false
         end
     end)
 end
@@ -599,24 +1203,33 @@ end
 -- UPDATE ITEM VISUAL
 --==================================================
 
-local function UpdateItemVisual(itemData, stock)
+local function UpdateItemVisual(
+    itemData,
+    stock
+)
 
     if not itemData then
         return
     end
+
 
     local selected =
         SelectedItems[itemData.Category]
         and SelectedItems[itemData.Category]
             [itemData.ItemName]
 
+
     itemData.Label.Text =
         itemData.ItemName
         .. "  "
         .. GetStatusText(stock)
 
+
     itemData.CheckButton.Text =
-        selected and "☑" or "☐"
+        selected
+        and "☑"
+        or "☐"
+
 
     if IsAvailable(stock) then
 
@@ -629,10 +1242,18 @@ local function UpdateItemVisual(itemData, stock)
     else
 
         itemData.Label.TextColor3 =
-            Color3.fromRGB(150, 150, 150)
+            Color3.fromRGB(
+                150,
+                150,
+                150
+            )
 
         itemData.CheckButton.TextColor3 =
-            Color3.fromRGB(150, 150, 150)
+            Color3.fromRGB(
+                150,
+                150,
+                150
+            )
     end
 end
 
@@ -640,27 +1261,42 @@ end
 --==================================================
 -- AUTO BUY
 --==================================================
--- Selected items remain armed while out of stock.
--- They wait for state.sync/restock instead of stopping.
---==================================================
 
-local function AutoBuy(category, itemName)
+local function AutoBuy(
+    category,
+    itemName
+)
+
+    if not AUTO_BUY then
+        return
+    end
+
 
     local key =
-        category .. ":" .. itemName
+        category
+        .. ":"
+        .. itemName
+
 
     if Buying[key] then
         return
     end
 
-    Buying[key] = true
+
+    Buying[key] =
+        true
+
 
     task.spawn(function()
 
         while not Terminated
-            and AUTO_RUNNING do
+            and AUTO_BUY do
 
-            -- Stop if unchecked.
+
+            --==========================================
+            -- CHECK SELECTION
+            --==========================================
+
             if not SelectedItems[category]
                 or not SelectedItems[category][itemName] then
 
@@ -668,38 +1304,39 @@ local function AutoBuy(category, itemName)
             end
 
 
-            --==================================================
-            -- CURRENT STOCK
-            --==================================================
+            --==========================================
+            -- GET STOCK
+            --==========================================
 
             local categoryStock =
                 CurrentStock[category]
 
-            local stock =
-                categoryStock
-                and categoryStock[itemName]
 
-
-            --==================================================
-            -- NO STOCK
-            --==================================================
-            -- Do not break.
-            -- Remain active and wait for restock.
-            --==================================================
-
-            if not IsAvailable(stock) then
-
-                task.wait(STATE_CHECK_INTERVAL)
-
-                continue
+            if not categoryStock then
+                break
             end
 
 
-            --==================================================
-            -- PURCHASE
-            --==================================================
+            local stock =
+                categoryStock[itemName]
 
-            local oldStock = stock
+
+            if not IsAvailable(stock) then
+                break
+            end
+
+
+            --==========================================
+            -- SAVE OLD STOCK
+            --==========================================
+
+            local oldStock =
+                stock
+
+
+            --==========================================
+            -- PURCHASE
+            --==========================================
 
             PurchaseItem(
                 category,
@@ -707,56 +1344,111 @@ local function AutoBuy(category, itemName)
             )
 
 
-            --==================================================
-            -- WAIT FOR STOCK CHANGE
-            --==================================================
+            --==========================================
+            -- WAIT FOR STATE CHANGE
+            --==========================================
 
-            local changed = false
+            local changed =
+                false
+
 
             local startTime =
                 os.clock()
 
+
             while not Terminated
-                and AUTO_RUNNING
+                and AUTO_BUY
                 and os.clock() - startTime
                     < PURCHASE_CONFIRM_TIMEOUT do
 
-                task.wait(STATE_CHECK_INTERVAL)
 
-                if not SelectedItems[category]
-                    or not SelectedItems[category][itemName] then
+                task.wait(
+                    STATE_CHECK_INTERVAL
+                )
 
-                    break
-                end
 
                 local latestCategory =
                     CurrentStock[category]
+
 
                 local latestStock =
                     latestCategory
                     and latestCategory[itemName]
 
+
                 if latestStock ~= oldStock then
 
-                    changed = true
+                    changed =
+                        true
+
                     break
                 end
             end
 
 
-            --==================================================
-            -- NO CONFIRMATION
-            --==================================================
+            --==========================================
+            -- SERVER DID NOT REPORT CHANGE
+            --==========================================
 
             if not changed then
-
-                -- Prevent rapid remote spam.
-                task.wait(STATE_CHECK_INTERVAL)
+                break
             end
         end
 
-        Buying[key] = nil
+
+        Buying[key] =
+            nil
     end)
+end
+
+
+--==================================================
+-- START AUTO BUY FOR ALL SELECTED ITEMS
+--==================================================
+
+local function StartSelectedAutoBuys()
+
+    if Terminated
+        or not AUTO_BUY then
+
+        return
+    end
+
+
+    for category, selected
+        in pairs(SelectedItems) do
+
+
+        if type(selected) == "table" then
+
+            local categoryStock =
+                CurrentStock[category]
+
+
+            if categoryStock then
+
+                for itemName, enabled
+                    in pairs(selected) do
+
+
+                    if enabled then
+
+                        local stock =
+                            categoryStock[itemName]
+
+
+                        if IsAvailable(stock) then
+
+                            AutoBuy(
+                                category,
+                                itemName
+                            )
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 
@@ -771,24 +1463,30 @@ local function SetSelected(
 )
 
     SelectedItems[category] =
-        SelectedItems[category] or {}
+        SelectedItems[category]
+        or {}
+
 
     SelectedItems[category][itemName] =
         enabled
 
+
     local categoryData =
         Categories[category]
+
 
     if categoryData then
 
         local itemData =
             categoryData.Items[itemName]
 
+
         if itemData then
 
             local stock =
                 CurrentStock[category]
                 and CurrentStock[category][itemName]
+
 
             UpdateItemVisual(
                 itemData,
@@ -798,16 +1496,25 @@ local function SetSelected(
     end
 
 
-    -- Start an auto-buy worker when selected.
-    -- It will wait if there is currently no stock.
+    -- Immediately start buying if:
+    -- selected + Auto Buy ON + stocked
 
     if enabled
-        and AUTO_RUNNING then
+        and AUTO_BUY then
 
-        AutoBuy(
-            category,
-            itemName
-        )
+
+        local stock =
+            CurrentStock[category]
+            and CurrentStock[category][itemName]
+
+
+        if IsAvailable(stock) then
+
+            AutoBuy(
+                category,
+                itemName
+            )
+        end
     end
 end
 
@@ -816,7 +1523,7 @@ end
 -- CATEGORY MESSAGE
 --==================================================
 
-local function ShowCategoryMessage(
+function ShowCategoryMessage(
     category,
     message,
     textColor
@@ -825,43 +1532,75 @@ local function ShowCategoryMessage(
     local categoryData =
         Categories[category]
 
+
     if not categoryData then
         return
     end
+
 
     for _, child in ipairs(
         categoryData.List:GetChildren()
     ) do
 
-        if not child:IsA("UIListLayout") then
+        if not child:IsA(
+            "UIListLayout"
+        ) then
+
             child:Destroy()
         end
     end
 
-    categoryData.Items = {}
+
+    categoryData.Items =
+        {}
+
 
     local Label =
         Instance.new("TextLabel")
 
-    Label.Name = "Status"
+
+    Label.Name =
+        "Status"
+
 
     Label.Size =
-        UDim2.new(1, -10, 0, 30)
+        UDim2.new(
+            1,
+            -10,
+            0,
+            30
+        )
 
-    Label.BackgroundTransparency = 1
+
+    Label.BackgroundTransparency =
+        1
+
 
     Label.Text =
-        "  " .. message
+        "  "
+        .. message
+
 
     Label.TextColor3 =
         textColor
-        or Color3.fromRGB(140, 140, 140)
+        or Color3.fromRGB(
+            140,
+            140,
+            140
+        )
 
-    Label.TextSize = 13
-    Label.Font = Enum.Font.Gotham
+
+    Label.TextSize =
+        13
+
+
+    Label.Font =
+        Enum.Font.Gotham
+
 
     Label.TextXAlignment =
         Enum.TextXAlignment.Left
+
 
     Label.Parent =
         categoryData.List
@@ -880,28 +1619,51 @@ local function CreateEmptyCategory(
     local Container =
         Instance.new("Frame")
 
-    Container.Name = category
-    Container.LayoutOrder = order
+
+    Container.Name =
+        category
+
+
+    Container.LayoutOrder =
+        order
+
 
     Container.Size =
-        UDim2.new(1, -2, 0, 40)
+        UDim2.new(
+            1,
+            -2,
+            0,
+            40
+        )
+
 
     Container.BackgroundColor3 =
-        Color3.fromRGB(35, 35, 35)
+        Color3.fromRGB(
+            35,
+            35,
+            35
+        )
 
-    Container.BorderSizePixel = 0
+
+    Container.BorderSizePixel =
+        0
+
 
     Container.AutomaticSize =
         Enum.AutomaticSize.Y
 
-    Container.Parent = MainScroll
+
+    Container.Parent =
+        MainScroll
 
 
     local ContainerCorner =
         Instance.new("UICorner")
 
+
     ContainerCorner.CornerRadius =
         UDim.new(0, 6)
+
 
     ContainerCorner.Parent =
         Container
@@ -914,44 +1676,72 @@ local function CreateEmptyCategory(
     local Header =
         Instance.new("TextButton")
 
-    Header.Name = "Header"
+
+    Header.Name =
+        "Header"
+
 
     Header.Size =
-        UDim2.new(1, 0, 0, 40)
+        UDim2.new(
+            1,
+            0,
+            0,
+            40
+        )
 
-    Header.BackgroundTransparency = 1
+
+    Header.BackgroundTransparency =
+        1
+
 
     Header.Text =
         "  "
         .. string.upper(category)
         .. "    ▼"
 
-    Header.TextColor3 =
-        Color3.new(1, 1, 1)
 
-    Header.TextSize = 15
+    Header.TextColor3 =
+        Color3.new(
+            1,
+            1,
+            1
+        )
+
+
+    Header.TextSize =
+        15
+
 
     Header.Font =
         Enum.Font.GothamBold
 
+
     Header.TextXAlignment =
         Enum.TextXAlignment.Left
+
 
     Header.Parent =
         Container
 
 
     --==================================================
-    -- ITEM SCROLLBAR
+    -- ITEM SCROLL
     --==================================================
 
     local ItemScroll =
         Instance.new("ScrollingFrame")
 
-    ItemScroll.Name = "Items"
+
+    ItemScroll.Name =
+        "Items"
+
 
     ItemScroll.Position =
-        UDim2.fromOffset(0, 40)
+        UDim2.fromOffset(
+            0,
+            40
+        )
+
 
     ItemScroll.Size =
         UDim2.new(
@@ -961,21 +1751,39 @@ local function CreateEmptyCategory(
             ITEM_SCROLL_HEIGHT
         )
 
-    ItemScroll.BackgroundTransparency = 1
-    ItemScroll.BorderSizePixel = 0
 
-    ItemScroll.ScrollBarThickness = 5
+    ItemScroll.BackgroundTransparency =
+        1
+
+
+    ItemScroll.BorderSizePixel =
+        0
+
+
+    ItemScroll.ScrollBarThickness =
+        5
+
 
     ItemScroll.ScrollingDirection =
         Enum.ScrollingDirection.Y
 
+
     ItemScroll.AutomaticCanvasSize =
         Enum.AutomaticSize.Y
 
-    ItemScroll.CanvasSize =
-        UDim2.new(0, 0, 0, 0)
 
-    ItemScroll.Visible = true
+    ItemScroll.CanvasSize =
+        UDim2.new(
+            0,
+            0,
+            0,
+            0
+        )
+
+
+    ItemScroll.Visible =
+        true
+
 
     ItemScroll.Parent =
         Container
@@ -988,11 +1796,17 @@ local function CreateEmptyCategory(
     local ItemLayout =
         Instance.new("UIListLayout")
 
+
     ItemLayout.Padding =
-        UDim.new(0, 2)
+        UDim.new(
+            0,
+            2
+        )
+
 
     ItemLayout.SortOrder =
         Enum.SortOrder.LayoutOrder
+
 
     ItemLayout.Parent =
         ItemScroll
@@ -1003,10 +1817,18 @@ local function CreateEmptyCategory(
     --==================================================
 
     Categories[category] = {
-        Frame = Container,
-        Header = Header,
-        List = ItemScroll,
-        Items = {}
+
+        Frame =
+            Container,
+
+        Header =
+            Header,
+
+        List =
+            ItemScroll,
+
+        Items =
+            {}
     }
 
 
@@ -1021,7 +1843,7 @@ local function CreateEmptyCategory(
 
 
     --==================================================
-    -- TOGGLE
+    -- TOGGLE CATEGORY
     --==================================================
 
     Header.MouseButton1Click:Connect(function()
@@ -1030,8 +1852,10 @@ local function CreateEmptyCategory(
             return
         end
 
+
         ItemScroll.Visible =
             not ItemScroll.Visible
+
 
         Header.Text =
             "  "
@@ -1046,38 +1870,37 @@ end
 
 
 --==================================================
--- CREATE CATEGORIES
---==================================================
-
-CreateEmptyCategory("gear", 5)
-CreateEmptyCategory("event", 6)
-CreateEmptyCategory("bait", 7)
-CreateEmptyCategory("eggs", 8)
-
-
---==================================================
 -- CLEAR CATEGORY ITEMS
 --==================================================
 
-local function ClearCategoryItems(category)
+local function ClearCategoryItems(
+    category
+)
 
     local categoryData =
         Categories[category]
+
 
     if not categoryData then
         return
     end
 
+
     for _, child in ipairs(
         categoryData.List:GetChildren()
     ) do
 
-        if not child:IsA("UIListLayout") then
+        if not child:IsA(
+            "UIListLayout"
+        ) then
+
             child:Destroy()
         end
     end
 
-    categoryData.Items = {}
+
+    categoryData.Items =
+        {}
 end
 
 
@@ -1093,32 +1916,47 @@ local function PopulateCategory(
     local categoryData =
         Categories[category]
 
+
     if not categoryData then
         return
     end
+
 
     if type(itemList) ~= "table" then
 
         ShowCategoryMessage(
             category,
             "Invalid category",
-            Color3.fromRGB(200, 100, 100)
+            Color3.fromRGB(
+                200,
+                100,
+                100
+            )
         )
 
         return
     end
 
-    ClearCategoryItems(category)
 
-    local validCount = 0
+    ClearCategoryItems(
+        category
+    )
+
+
+    local validCount =
+        0
+
 
     for index, itemName
         in ipairs(itemList) do
 
+
         if type(itemName) == "string"
             and itemName ~= "" then
 
+
             validCount += 1
+
 
             local stock =
                 CurrentStock[category]
@@ -1132,16 +1970,35 @@ local function PopulateCategory(
             local Row =
                 Instance.new("Frame")
 
-            Row.Name = itemName
-            Row.LayoutOrder = index
+
+            Row.Name =
+                itemName
+
+
+            Row.LayoutOrder =
+                index
+
 
             Row.Size =
-                UDim2.new(1, -8, 0, 34)
+                UDim2.new(
+                    1,
+                    -8,
+                    0,
+                    34
+                )
+
 
             Row.BackgroundColor3 =
-                Color3.fromRGB(45, 45, 45)
+                Color3.fromRGB(
+                    45,
+                    45,
+                    45
+                )
 
-            Row.BorderSizePixel = 0
+
+            Row.BorderSizePixel =
+                0
+
 
             Row.Parent =
                 categoryData.List
@@ -1150,8 +2007,13 @@ local function PopulateCategory(
             local RowCorner =
                 Instance.new("UICorner")
 
+
             RowCorner.CornerRadius =
-                UDim.new(0, 4)
+                UDim.new(
+                    0,
+                    4
+                )
+
 
             RowCorner.Parent =
                 Row
@@ -1164,30 +2026,55 @@ local function PopulateCategory(
             local CheckButton =
                 Instance.new("TextButton")
 
-            CheckButton.Name = "Check"
+
+            CheckButton.Name =
+                "Check"
+
 
             CheckButton.Size =
-                UDim2.fromOffset(30, 30)
+                UDim2.fromOffset(
+                    30,
+                    30
+                )
+
 
             CheckButton.Position =
-                UDim2.fromOffset(4, 2)
+                UDim2.fromOffset(
+                    4,
+                    2
+                )
 
-            CheckButton.BackgroundTransparency = 1
 
-            CheckButton.TextSize = 19
+            CheckButton.BackgroundTransparency =
+                1
+
+
+            CheckButton.TextSize =
+                19
+
 
             CheckButton.Font =
                 Enum.Font.GothamBold
+
 
             local selected =
                 SelectedItems[category]
                 and SelectedItems[category][itemName]
 
+
             CheckButton.Text =
-                selected and "☑" or "☐"
+                selected
+                and "☑"
+                or "☐"
+
 
             CheckButton.TextColor3 =
-                Color3.fromRGB(200, 200, 200)
+                Color3.fromRGB(
+                    200,
+                    200,
+                    200
+                )
+
 
             CheckButton.Parent =
                 Row
@@ -1200,28 +2087,48 @@ local function PopulateCategory(
             local Label =
                 Instance.new("TextLabel")
 
-            Label.Name = "Item"
+
+            Label.Name =
+                "Item"
+
 
             Label.Position =
-                UDim2.fromOffset(38, 0)
+                UDim2.fromOffset(
+                    38,
+                    0
+                )
+
 
             Label.Size =
-                UDim2.new(1, -40, 1, 0)
+                UDim2.new(
+                    1,
+                    -40,
+                    1,
+                    0
+                )
 
-            Label.BackgroundTransparency = 1
 
-            Label.TextSize = 13
+            Label.BackgroundTransparency =
+                1
+
+
+            Label.TextSize =
+                13
+
 
             Label.Font =
                 Enum.Font.Gotham
 
+
             Label.TextXAlignment =
                 Enum.TextXAlignment.Left
+
 
             Label.Text =
                 itemName
                 .. "  "
                 .. GetStatusText(stock)
+
 
             Label.Parent =
                 Row
@@ -1232,12 +2139,23 @@ local function PopulateCategory(
             --==================================================
 
             local ItemData = {
-                Category = category,
-                ItemName = itemName,
-                Row = Row,
-                Label = Label,
-                CheckButton = CheckButton
+
+                Category =
+                    category,
+
+                ItemName =
+                    itemName,
+
+                Row =
+                    Row,
+
+                Label =
+                    Label,
+
+                CheckButton =
+                    CheckButton
             }
+
 
             categoryData.Items[itemName] =
                 ItemData
@@ -1259,9 +2177,11 @@ local function PopulateCategory(
                     return
                 end
 
+
                 local selectedNow =
                     SelectedItems[category]
                     and SelectedItems[category][itemName]
+
 
                 SetSelected(
                     category,
@@ -1278,7 +2198,11 @@ local function PopulateCategory(
         ShowCategoryMessage(
             category,
             "No items",
-            Color3.fromRGB(140, 140, 140)
+            Color3.fromRGB(
+                140,
+                140,
+                140
+            )
         )
     end
 end
@@ -1297,19 +2221,27 @@ local function LoadShopJson()
             true
         ) then
 
+
         for _, category
             in ipairs(CategoryOrder) do
+
 
             ShowCategoryMessage(
                 category,
                 "Set shop.json URL",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
         end
+
 
         warn(
             "[ShopRestock] Set SHOP_JSON_URL first."
         )
+
 
         return false
     end
@@ -1329,17 +2261,24 @@ local function LoadShopJson()
         for _, category
             in ipairs(CategoryOrder) do
 
+
             ShowCategoryMessage(
                 category,
                 "Failed to fetch JSON",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
         end
+
 
         warn(
             "[ShopRestock] HTTP error:",
             response
         )
+
 
         return false
     end
@@ -1348,21 +2287,29 @@ local function LoadShopJson()
     if type(response) ~= "string"
         or response == "" then
 
+
         for _, category
             in ipairs(CategoryOrder) do
+
 
             ShowCategoryMessage(
                 category,
                 "Empty JSON",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
         end
+
 
         return false
     end
 
 
-    -- Remove UTF-8 BOM.
+    -- Remove UTF-8 BOM
+
     response =
         response:gsub(
             "^\239\187\191",
@@ -1384,17 +2331,24 @@ local function LoadShopJson()
         for _, category
             in ipairs(CategoryOrder) do
 
+
             ShowCategoryMessage(
                 category,
                 "Invalid JSON",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
         end
+
 
         warn(
             "[ShopRestock] JSON decode error:",
             decoded
         )
+
 
         return false
     end
@@ -1405,18 +2359,26 @@ local function LoadShopJson()
         for _, category
             in ipairs(CategoryOrder) do
 
+
             ShowCategoryMessage(
                 category,
                 "Invalid JSON object",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
         end
+
 
         return false
     end
 
 
-    ShopItems = decoded
+    ShopItems =
+        decoded
+
 
     return true
 end
@@ -1431,24 +2393,36 @@ local function BuildFromJson()
     for _, category
         in ipairs(CategoryOrder) do
 
+
         local items =
             ShopItems[category]
+
 
         if items == nil then
 
             ShowCategoryMessage(
                 category,
                 "Missing in JSON",
-                Color3.fromRGB(220, 170, 80)
+                Color3.fromRGB(
+                    220,
+                    170,
+                    80
+                )
             )
+
 
         elseif type(items) ~= "table" then
 
             ShowCategoryMessage(
                 category,
                 "Invalid category",
-                Color3.fromRGB(200, 100, 100)
+                Color3.fromRGB(
+                    200,
+                    100,
+                    100
+                )
             )
+
 
         else
 
@@ -1470,12 +2444,15 @@ local function RefreshAllItems()
     for category, categoryData
         in pairs(Categories) do
 
+
         for itemName, itemData
             in pairs(categoryData.Items) do
+
 
             local stock =
                 CurrentStock[category]
                 and CurrentStock[category][itemName]
+
 
             UpdateItemVisual(
                 itemData,
@@ -1490,29 +2467,36 @@ end
 -- APPLY RESTOCK
 --==================================================
 
-local function ApplyShopData(shopRestock)
+local function ApplyShopData(
+    shopRestock
+)
 
     if type(shopRestock) ~= "table" then
         return
     end
 
+
     local availableItems =
         shopRestock.availableItems
+
 
     if type(availableItems) ~= "table" then
         return
     end
 
 
-    --==================================================
+    --==============================================
     -- UPDATE CURRENT STOCK
-    --==================================================
+    --==============================================
 
     for _, category
         in ipairs(CategoryOrder) do
 
-        if type(availableItems[category])
-            == "table" then
+
+        if type(
+            availableItems[category]
+        ) == "table" then
+
 
             CurrentStock[category] =
                 availableItems[category]
@@ -1520,45 +2504,21 @@ local function ApplyShopData(shopRestock)
     end
 
 
+    --==============================================
+    -- UPDATE GUI
+    --==============================================
+
     RefreshAllItems()
 
 
-    --==================================================
-    -- AUTO RESUME
-    --==================================================
+    --==============================================
+    -- AUTO BUY
+    --==============================================
 
-    if not AUTO_RUNNING then
-        return
+    if AUTO_BUY then
+
+        StartSelectedAutoBuys()
     end
-
-
-    task.defer(function()
-
-        if Terminated
-            or not AUTO_RUNNING then
-            return
-        end
-
-
-        -- Start workers for every selected item.
-        -- They handle both stocked and unstocked states.
-
-        for category, selected
-            in pairs(SelectedItems) do
-
-            for itemName, enabled
-                in pairs(selected) do
-
-                if enabled then
-
-                    AutoBuy(
-                        category,
-                        itemName
-                    )
-                end
-            end
-        end
-    end)
 end
 
 
@@ -1572,15 +2532,22 @@ SetSpeedButton.MouseButton1Click:Connect(function()
         return
     end
 
+
     local value =
-        tonumber(SpeedBox.Text)
+        tonumber(
+            SpeedBox.Text
+        )
+
 
     if value then
 
-        SPEED = value
+        SPEED =
+            value
+
 
         SpeedBox.Text =
             tostring(SPEED)
+
 
         ApplySpeed()
 
@@ -1596,22 +2563,35 @@ end)
 -- SPEED ENTER KEY
 --==================================================
 
-SpeedBox.FocusLost:Connect(function(enterPressed)
+SpeedBox.FocusLost:Connect(function(
+    enterPressed
+)
 
-    if Terminated
-        or not enterPressed then
+    if Terminated then
         return
     end
 
+
+    if not enterPressed then
+        return
+    end
+
+
     local value =
-        tonumber(SpeedBox.Text)
+        tonumber(
+            SpeedBox.Text
+        )
+
 
     if value then
 
-        SPEED = value
+        SPEED =
+            value
+
 
         SpeedBox.Text =
             tostring(SPEED)
+
 
         ApplySpeed()
 
@@ -1633,96 +2613,63 @@ DefaultButton.MouseButton1Click:Connect(function()
         return
     end
 
-    SPEED = DEFAULT_SPEED
+
+    SPEED =
+        DEFAULT_SPEED
+
 
     SpeedBox.Text =
         tostring(SPEED)
+
 
     ApplySpeed()
 end)
 
 
 --==================================================
--- AUTO BUY START / STOP
+-- AUTO BUY TOGGLE
 --==================================================
 
-local AutoStartButton = Instance.new("TextButton")
-
-AutoStartButton.Name = "AutoStartButton"
-AutoStartButton.LayoutOrder = 9
-
-AutoStartButton.Size =
-    UDim2.new(1, -2, 0, 40)
-
-AutoStartButton.BackgroundColor3 =
-    Color3.fromRGB(45, 45, 45)
-
-AutoStartButton.BorderSizePixel = 0
-
-AutoStartButton.Text =
-    "Start Auto Buy"
-
-AutoStartButton.TextColor3 =
-    Color3.new(1, 1, 1)
-
-AutoStartButton.TextSize = 14
-
-AutoStartButton.Font =
-    Enum.Font.GothamBold
-
-AutoStartButton.Parent =
-    MainScroll
-
-local AutoStartCorner =
-    Instance.new("UICorner")
-
-AutoStartCorner.CornerRadius =
-    UDim.new(0, 6)
-
-AutoStartCorner.Parent =
-    AutoStartButton
-
-
-AutoStartButton.MouseButton1Click:Connect(function()
+AutoBuyButton.MouseButton1Click:Connect(function()
 
     if Terminated then
         return
     end
 
 
-    AUTO_RUNNING =
-        not AUTO_RUNNING
+    AUTO_BUY =
+        not AUTO_BUY
 
 
-    if AUTO_RUNNING then
+    if AUTO_BUY then
 
-        AutoStartButton.Text =
-            "Stop Auto Buy"
+        AutoBuyButton.Text =
+            "✓"
+
+        AutoBuyButton.TextColor3 =
+            Color3.fromRGB(
+                100,
+                255,
+                100
+            )
 
 
-        -- Start every selected item.
-        -- No-stock items stay waiting.
+        -- Start any currently stocked
+        -- selected items.
 
-        for category, selected
-            in pairs(SelectedItems) do
-
-            for itemName, enabled
-                in pairs(selected) do
-
-                if enabled then
-
-                    AutoBuy(
-                        category,
-                        itemName
-                    )
-                end
-            end
-        end
+        StartSelectedAutoBuys()
 
     else
 
-        AutoStartButton.Text =
-            "Start Auto Buy"
+        AutoBuyButton.Text =
+            "/"
+
+        AutoBuyButton.TextColor3 =
+            Color3.fromRGB(
+                200,
+                200,
+                200
+            )
     end
 end)
 
@@ -1736,6 +2683,7 @@ FeedButton.MouseButton1Click:Connect(function()
     if Terminated then
         return
     end
+
 
     FeedKingBeeEvent:FireServer()
 end)
@@ -1751,7 +2699,9 @@ Player.CharacterAdded:Connect(function()
         return
     end
 
+
     task.wait(1)
+
 
     ApplySpeed()
 end)
@@ -1761,19 +2711,24 @@ end)
 -- STATE.SYNC
 --==================================================
 
-StateSync.OnClientEvent:Connect(function(payload)
+StateSync.OnClientEvent:Connect(function(
+    payload
+)
 
     if Terminated then
         return
     end
 
+
     if type(payload) ~= "table" then
         return
     end
 
+
     if payload.type ~= "patch" then
         return
     end
+
 
     if type(payload.data) ~= "table" then
         return
@@ -1783,14 +2738,20 @@ StateSync.OnClientEvent:Connect(function(payload)
     local shopRestock =
         payload.data.shopRestock
 
+
     if not shopRestock then
         return
     end
 
 
+    -- Restock detected
+
     BlinkRestockDot()
 
-    ApplyShopData(shopRestock)
+
+    ApplyShopData(
+        shopRestock
+    )
 end)
 
 
@@ -1804,20 +2765,68 @@ CloseButton.MouseButton1Click:Connect(function()
         return
     end
 
-    Terminated = true
 
-    AUTO_RUNNING = false
+    Terminated =
+        true
+
+
+    AUTO_BUY =
+        false
+
 
     BlinkToken += 1
 
-    SelectedItems = {}
-    CurrentStock = {}
-    Buying = {}
-    Categories = {}
-    ShopItems = {}
+
+    SelectedItems =
+        {}
+
+
+    CurrentStock =
+        {}
+
+
+    Buying =
+        {}
+
+
+    Categories =
+        {}
+
+
+    ShopItems =
+        {}
+
 
     ScreenGui:Destroy()
 end)
+
+
+--==================================================
+-- CREATE DROPDOWNS
+--==================================================
+
+CreateEmptyCategory(
+    "gear",
+    6
+)
+
+
+CreateEmptyCategory(
+    "event",
+    7
+)
+
+
+CreateEmptyCategory(
+    "bait",
+    8
+)
+
+
+CreateEmptyCategory(
+    "eggs",
+    9
+)
 
 
 --==================================================
@@ -1826,16 +2835,20 @@ end)
 
 ApplySpeed()
 
+
 task.spawn(function()
 
     local loaded =
         LoadShopJson()
 
+
     if Terminated then
         return
     end
 
+
     if loaded then
+
         BuildFromJson()
     end
 end)
