@@ -1,4 +1,4 @@
---Farm a fish: bee event (change title in the shop restock header)
+--Farm a fish: bee event (change title in the "TITLE")
 
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
@@ -174,7 +174,7 @@ Title.Name = "Title"
 Title.Position = UDim2.fromOffset(26, 0)
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Shop Restock"
+Title.Text = "Farm a Fish: Bee Event 2"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.TextSize = 18
 Title.Font = Enum.Font.GothamBold
@@ -352,7 +352,7 @@ ShopHeader.Name = "ShopRestockHeader"
 ShopHeader.LayoutOrder = 4
 ShopHeader.Size = UDim2.new(1, -2, 0, 30)
 ShopHeader.BackgroundTransparency = 1
-ShopHeader.Text = "Farm a Fish: Bee Event 2"
+ShopHeader.Text = "SHOP RESTOCK"
 ShopHeader.TextColor3 = Color3.new(1, 1, 1)
 ShopHeader.TextSize = 14
 ShopHeader.Font = Enum.Font.GothamBold
