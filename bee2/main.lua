@@ -111,7 +111,7 @@ local Terminated = false
 --==================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Farm a Fish: Bee Event 2"
+ScreenGui.Name = "ShopRestockGUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -180,7 +180,7 @@ Title.Name = "Title"
 Title.Position = UDim2.fromOffset(26, 0)
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Shop Restock"
+Title.Text = "Farm a Fish: Bee Event 2"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.TextSize = 18
 Title.Font = Enum.Font.GothamBold
