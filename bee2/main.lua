@@ -949,7 +949,7 @@ local function StopAutoBuy()
 end
 
 --==================================================
--- SET SELECTED (simplified)
+-- SET SELECTED (improved: ensures auto-buy runs)
 --==================================================
 
 local function SetSelected(category, itemKey, enabled)
@@ -963,6 +963,11 @@ local function SetSelected(category, itemKey, enabled)
             local stock = CurrentStock[category] and CurrentStock[category][itemKey]
             UpdateItemVisual(itemData, stock)
         end
+    end
+
+    -- If auto-buy is enabled, make sure the loop is running
+    if AUTO_BUY and enabled then
+        StartAutoBuy()
     end
 end
 
