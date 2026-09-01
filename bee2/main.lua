@@ -1,52 +1,6 @@
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
 --==================================================
--- JSON format:
---
--- {
---     "gear": [
---         {
---             "id": "BasicAutoFeeder",
---             "name": "Basic Auto Feeder"
---         }
---     ],
---
---     "event": [
---         {
---             "id": "egg:Bee",
---             "name": "Bee Egg"
---         }
---     ]
--- }
---
--- name missing/empty -> id is displayed
--- GUI displays name
--- purchase remote receives id
---
--- GUI order:
--- Speed [TextBox] [Set]
--- Default
--- Feed King Bee
--- SHOP RESTOCK
--- Auto Buy [☐]
--- GEAR
--- EVENT
--- BAIT
--- EGGS
---
--- Auto Buy:
--- selected item + stock > 0
--- -> purchase
--- -> saved stock - 1
--- -> update GUI
--- -> purchase again
--- -> stop at 0
---
--- On restock:
--- saved stock is refreshed
--- selected items automatically resume
---==================================================
-
 
 --==================================================
 -- SERVICES
@@ -2103,9 +2057,6 @@ local function BuildFromJson()
     for _, category
         in ipairs(CategoryOrder) do
 
-        BuildCategorySafe =
-            nil
-
         local success, err =
             pcall(function()
 
@@ -2177,6 +2128,22 @@ end
 
 
 --==================================================
+-- REFRESH ALL ITEMS
+--==================================================
+
+local function RefreshAllItems()
+    for category, categoryData in pairs(Categories) do
+        if categoryData.Items then
+            for itemKey, itemData in pairs(categoryData.Items) do
+                local stock = CurrentStock[category] and CurrentStock[category][itemKey]
+                UpdateItemVisual(itemData, stock)
+            end
+        end
+    end
+end
+
+
+--==================================================
 -- APPLY RESTOCK
 --==================================================
 
@@ -2232,6 +2199,8 @@ local function ApplyShopData(
         return
     end
 
+    -- Clear old buying flags so items can restart on restock
+    Buying = {}
 
     for category, selected
         in pairs(SelectedItems) do
