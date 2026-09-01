@@ -73,6 +73,8 @@ local RestockDelayToken = 0
 local AutoBuyRunning = false
 local AutoBuyTask = nil
 
+local RemoContainer = nil
+
 
 --==================================================
 -- GUI
@@ -551,13 +553,17 @@ end
 
 
 --==================================================
--- UPDATED: GET STATUS TEXT (shows [0] for zero stock)
+-- GET STATUS TEXT
 --==================================================
 
 local function GetStatusText(stock)
+
     if type(stock) == "number" then
+
         return "[" .. tostring(stock) .. "]"
+
     end
+
     return "[Not Restocked]"
 end
 
@@ -630,13 +636,12 @@ local function GetItemName(item)
     end
 
 
-    -- Empty or missing name -> ID.
     return itemId
 end
 
 
 --==================================================
--- PURCHASE (with retry)
+-- PURCHASE
 --==================================================
 
 local function PurchaseItem(
@@ -646,6 +651,16 @@ local function PurchaseItem(
 
     if not itemId
         or itemId == "" then
+
+        return false
+    end
+
+
+    if not RemoContainer then
+
+        warn(
+            "[ShopRestock] RemoContainer unavailable."
+        )
 
         return false
     end
@@ -881,42 +896,138 @@ end
 
 
 --==================================================
--- NEW AUTO BUY (SINGLE LOOP)
+-- PURCHASE WITH RETRY
 --==================================================
 
-local function PurchaseItemWithRetry(category, itemId, maxAttempts)
-    maxAttempts = maxAttempts or 3
+local function PurchaseItemWithRetry(
+    category,
+    itemId,
+    maxAttempts
+)
+
+    maxAttempts =
+        maxAttempts or 3
+
+
     for attempt = 1, maxAttempts do
-        if Terminated or not AutoBuyRunning then return false end
-        local success = PurchaseItem(category, itemId)
-        if success then return true end
-        task.wait(0.2)  -- wait before retry
+
+        if Terminated
+            or not AutoBuyRunning then
+
+            return false
+        end
+
+
+        local success =
+            PurchaseItem(
+                category,
+                itemId
+            )
+
+
+        if success then
+            return true
+        end
+
+
+        task.wait(0.2)
     end
+
+
     return false
 end
 
+
+--==================================================
+-- AUTO BUY
+--==================================================
+
 local function AutoBuyLoop()
-    while AutoBuyRunning and not Terminated do
-        local anyPurchased = false
-        -- Iterate over all categories in order
-        for _, category in ipairs(CategoryOrder) do
-            local selected = SelectedItems[category]
+
+    while AutoBuyRunning
+        and not Terminated do
+
+        local anyPurchased =
+            false
+
+
+        --==========================================
+        -- CATEGORY ORDER
+        --==========================================
+
+        for _, category
+            in ipairs(CategoryOrder) do
+
+            local selected =
+                SelectedItems[category]
+
+
             if selected then
-                local categoryStock = CurrentStock[category]
+
+                local categoryStock =
+                    CurrentStock[category]
+
+
                 if categoryStock then
-                    for itemKey, enabled in pairs(selected) do
-                        if enabled and AutoBuyRunning and not Terminated then
-                            local stock = categoryStock[itemKey]
+
+                    for itemKey, enabled
+                        in pairs(selected) do
+
+                        if enabled
+                            and AutoBuyRunning
+                            and not Terminated then
+
+                            local stock =
+                                categoryStock[itemKey]
+
+
+                            --======================
+                            -- ONLY BUY > 0
+                            --======================
+
                             if IsAvailable(stock) then
-                                local itemData = Categories[category] and Categories[category].Items[itemKey]
+
+                                local itemData =
+                                    Categories[category]
+                                    and Categories[category]
+                                        .Items[itemKey]
+
+
                                 if itemData then
-                                    -- Attempt purchase
-                                    if PurchaseItemWithRetry(category, itemData.ItemId, 3) then
-                                        -- Decrement stock
-                                        local newStock = math.max(stock - 1, 0)
-                                        CurrentStock[category][itemKey] = newStock
-                                        UpdateItemVisual(itemData, newStock)
-                                        anyPurchased = true
+
+                                    local purchased =
+                                        PurchaseItemWithRetry(
+                                            category,
+                                            itemData.ItemId,
+                                            3
+                                        )
+
+
+                                    if purchased then
+
+                                        --==================
+                                        -- LOCAL DECREMENT
+                                        --==================
+
+                                        local newStock =
+                                            math.max(
+                                                stock - 1,
+                                                0
+                                            )
+
+
+                                        CurrentStock[category][itemKey] =
+                                            newStock
+
+
+                                        UpdateItemVisual(
+                                            itemData,
+                                            newStock
+                                        )
+
+
+                                        anyPurchased =
+                                            true
                                     end
                                 end
                             end
@@ -925,48 +1036,122 @@ local function AutoBuyLoop()
                 end
             end
         end
-        -- If nothing was bought, wait a bit before checking again (avoid busy loop)
+
+
+        --==========================================
+        -- NOTHING AVAILABLE
+        --==========================================
+
         if not anyPurchased then
+
+            -- At 0 / unavailable, wait.
+            -- The next shopRestock will replace
+            -- CurrentStock and restart the loop.
+
             task.wait(0.5)
+
         else
-            task.wait(PURCHASE_INTERVAL)  -- small delay between purchase rounds
+
+            task.wait(
+                PURCHASE_INTERVAL
+            )
         end
     end
 end
+
+
+--==================================================
+-- START AUTO BUY
+--==================================================
 
 local function StartAutoBuy()
-    if AutoBuyRunning then return end
-    AutoBuyRunning = true
-    AutoBuyTask = task.spawn(AutoBuyLoop)
+
+    if AutoBuyRunning then
+        return
+    end
+
+
+    AutoBuyRunning =
+        true
+
+
+    AutoBuyTask =
+        task.spawn(
+            AutoBuyLoop
+        )
 end
 
+
+--==================================================
+-- STOP AUTO BUY
+--==================================================
+
 local function StopAutoBuy()
-    AutoBuyRunning = false
+
+    AutoBuyRunning =
+        false
+
+
     if AutoBuyTask then
-        task.cancel(AutoBuyTask)
-        AutoBuyTask = nil
+
+        task.cancel(
+            AutoBuyTask
+        )
+
+
+        AutoBuyTask =
+            nil
     end
 end
 
+
 --==================================================
--- SET SELECTED (improved: ensures auto-buy runs)
+-- SET SELECTED
 --==================================================
 
-local function SetSelected(category, itemKey, enabled)
-    SelectedItems[category] = SelectedItems[category] or {}
-    SelectedItems[category][itemKey] = enabled
+local function SetSelected(
+    category,
+    itemKey,
+    enabled
+)
 
-    local categoryData = Categories[category]
+    SelectedItems[category] =
+        SelectedItems[category]
+        or {}
+
+
+    SelectedItems[category][itemKey] =
+        enabled
+
+
+    local categoryData =
+        Categories[category]
+
+
     if categoryData then
-        local itemData = categoryData.Items[itemKey]
+
+        local itemData =
+            categoryData.Items[itemKey]
+
+
         if itemData then
-            local stock = CurrentStock[category] and CurrentStock[category][itemKey]
-            UpdateItemVisual(itemData, stock)
+
+            local stock =
+                CurrentStock[category]
+                and CurrentStock[category][itemKey]
+
+
+            UpdateItemVisual(
+                itemData,
+                stock
+            )
         end
     end
 
-    -- If auto-buy is enabled, make sure the loop is running
-    if AUTO_BUY and enabled then
+
+    if AUTO_BUY
+        and enabled then
+
         StartAutoBuy()
     end
 end
@@ -1125,6 +1310,7 @@ local function PopulateCategory(
             )
         )
 
+
         return false
     end
 
@@ -1180,9 +1366,9 @@ local function PopulateCategory(
                     and CurrentStock[category][itemId]
 
 
-                --======================================
+                --==================================
                 -- ROW
-                --======================================
+                --==================================
 
                 local Row =
                     Instance.new("Frame")
@@ -1239,9 +1425,9 @@ local function PopulateCategory(
                     Row
 
 
-                --======================================
-                -- ITEM CHECKBOX
-                --======================================
+                --==================================
+                -- CHECKBOX
+                --==================================
 
                 local CheckButton =
                     Instance.new("TextButton")
@@ -1300,9 +1486,9 @@ local function PopulateCategory(
                     Row
 
 
-                --======================================
+                --==================================
                 -- ITEM NAME
-                --======================================
+                --==================================
 
                 local Label =
                     Instance.new("TextLabel")
@@ -1354,9 +1540,9 @@ local function PopulateCategory(
                     Row
 
 
-                --======================================
+                --==================================
                 -- ITEM DATA
-                --======================================
+                --==================================
 
                 local ItemData = {
 
@@ -1393,9 +1579,9 @@ local function PopulateCategory(
                 )
 
 
-                --======================================
+                --==================================
                 -- CHECKBOX CLICK
-                --======================================
+                --==================================
 
                 CheckButton.MouseButton1Click:Connect(
                     function()
@@ -2001,11 +2187,24 @@ end
 --==================================================
 
 local function RefreshAllItems()
-    for category, categoryData in pairs(Categories) do
+
+    for category, categoryData
+        in pairs(Categories) do
+
         if categoryData.Items then
-            for itemKey, itemData in pairs(categoryData.Items) do
-                local stock = CurrentStock[category] and CurrentStock[category][itemKey]
-                UpdateItemVisual(itemData, stock)
+
+            for itemKey, itemData
+                in pairs(categoryData.Items) do
+
+                local stock =
+                    CurrentStock[category]
+                    and CurrentStock[category][itemKey]
+
+
+                UpdateItemVisual(
+                    itemData,
+                    stock
+                )
             end
         end
     end
@@ -2035,7 +2234,7 @@ local function ApplyShopData(
 
 
     --==============================================
-    -- REPLACE SAVED STOCK WITH RESTOCK DATA
+    -- COPY SERVER STOCK
     --==============================================
 
     for _, category
@@ -2047,8 +2246,20 @@ local function ApplyShopData(
 
         if type(data) == "table" then
 
+            local copiedStock =
+                {}
+
+
+            for itemKey, stock
+                in pairs(data) do
+
+                copiedStock[itemKey] =
+                    stock
+            end
+
+
             CurrentStock[category] =
-                data
+                copiedStock
         end
     end
 
@@ -2061,11 +2272,13 @@ local function ApplyShopData(
 
 
     --==============================================
-    -- RESTART AUTO BUY IF ENABLED
+    -- RESTART AUTO BUY
     --==============================================
 
     if AUTO_BUY then
+
         StopAutoBuy()
+
         StartAutoBuy()
     end
 end
@@ -2156,12 +2369,14 @@ AutoBuyButton.MouseButton1Click:Connect(
             AutoBuyButton.Text =
                 "☑"
 
+
             AutoBuyButton.TextColor3 =
                 Color3.new(
                     1,
                     1,
                     1
                 )
+
 
             StartAutoBuy()
 
@@ -2170,12 +2385,14 @@ AutoBuyButton.MouseButton1Click:Connect(
             AutoBuyButton.Text =
                 "☐"
 
+
             AutoBuyButton.TextColor3 =
                 Color3.fromRGB(
                     200,
                     200,
                     200
                 )
+
 
             StopAutoBuy()
         end
@@ -2195,10 +2412,22 @@ FeedButton.MouseButton1Click:Connect(
         end
 
 
+        if not RemoContainer then
+
+            warn(
+                "[ShopRestock] RemoContainer not available yet."
+            )
+
+            return
+        end
+
+
         local success, err =
             pcall(function()
 
-                RemoContainer["bee.feedKingBeeAll"]:FireServer()
+                RemoContainer[
+                    "bee.feedKingBeeAll"
+                ]:FireServer()
             end)
 
 
@@ -2237,90 +2466,221 @@ Player.CharacterAdded:Connect(
 -- STATE.SYNC
 --==================================================
 
--- Obtain remotes after GUI has already been built.
--- This keeps GUI construction independent from the
--- JSON and remote initialization.
+local function GetRemoContainer()
 
-local RemoContainer =
-    ReplicatedStorage
-        :WaitForChild(
-            "rbxts_include"
-        )
-        :WaitForChild(
-            "node_modules"
-        )
-        :WaitForChild(
-            "@rbxts"
-        )
-        :WaitForChild(
-            "remo"
-        )
-        :WaitForChild(
-            "src"
-        )
-        :WaitForChild(
-            "container"
-        )
+    local success, result =
+        pcall(function()
+
+            local rbxtsInclude =
+                ReplicatedStorage:WaitForChild(
+                    "rbxts_include",
+                    10
+                )
 
 
-local StateSync =
-    RemoContainer:WaitForChild(
-        "state.sync"
-    )
-
-
-StateSync.OnClientEvent:Connect(
-    function(payload)
-
-        if Terminated then
-            return
-        end
-
-
-        if type(payload) ~= "table" then
-            return
-        end
-
-
-        if payload.type ~= "patch" then
-            return
-        end
-
-
-        if type(payload.data) ~= "table" then
-            return
-        end
-
-
-        local shopRestock =
-            payload.data.shopRestock
-
-
-        if not shopRestock then
-            return
-        end
-
-
-        -- Blink the dot immediately
-        BlinkRestockDot()
-
-
-        -- Delay applying the restock by 1–2 seconds (random)
-        RestockDelayToken = RestockDelayToken + 1
-        local myToken = RestockDelayToken
-
-        task.spawn(function()
-            local delay = 1 + math.random()  -- between 1 and 2 seconds
-            task.wait(delay)
-
-            if Terminated or myToken ~= RestockDelayToken then
-                return
+            if not rbxtsInclude then
+                error("rbxts_include not found")
             end
 
-            ApplyShopData(shopRestock)
+
+            local nodeModules =
+                rbxtsInclude:WaitForChild(
+                    "node_modules",
+                    10
+                )
+
+
+            if not nodeModules then
+                error("node_modules not found")
+            end
+
+
+            local rbxts =
+                nodeModules:WaitForChild(
+                    "@rbxts",
+                    10
+                )
+
+
+            if not rbxts then
+                error("@rbxts not found")
+            end
+
+
+            local remo =
+                rbxts:WaitForChild(
+                    "remo",
+                    10
+                )
+
+
+            if not remo then
+                error("remo not found")
+            end
+
+
+            local src =
+                remo:WaitForChild(
+                    "src",
+                    10
+                )
+
+
+            if not src then
+                error("remo.src not found")
+            end
+
+
+            local container =
+                src:WaitForChild(
+                    "container",
+                    10
+                )
+
+
+            if not container then
+                error("remo container not found")
+            end
+
+
+            return container
         end)
+
+
+    if not success then
+
+        warn(
+            "[ShopRestock] Failed to get RemoContainer:",
+            result
+        )
+
+
+        return nil
     end
-)
+
+
+    return result
+end
+
+
+--==================================================
+-- INITIALIZE REMOTES
+--==================================================
+
+RemoContainer =
+    GetRemoContainer()
+
+
+if RemoContainer then
+
+    local StateSync =
+        RemoContainer:FindFirstChild(
+            "state.sync"
+        )
+
+
+    if StateSync then
+
+        StateSync.OnClientEvent:Connect(
+            function(payload)
+
+                if Terminated then
+                    return
+                end
+
+
+                if type(payload) ~= "table" then
+                    return
+                end
+
+
+                if payload.type ~= "patch" then
+                    return
+                end
+
+
+                if type(payload.data) ~= "table" then
+                    return
+                end
+
+
+                --==================================
+                -- ONLY NORMAL SHOP RESTOCK
+                --==================================
+
+                local shopRestock =
+                    payload.data.shopRestock
+
+
+                if type(shopRestock) ~= "table" then
+                    return
+                end
+
+
+                local availableItems =
+                    shopRestock.availableItems
+
+
+                if type(availableItems) ~= "table" then
+                    return
+                end
+
+
+                --==================================
+                -- BLINK
+                --==================================
+
+                BlinkRestockDot()
+
+
+                --==================================
+                -- DELAY
+                --==================================
+
+                RestockDelayToken =
+                    RestockDelayToken + 1
+
+
+                local myToken =
+                    RestockDelayToken
+
+
+                task.spawn(function()
+
+                    local delay =
+                        1 + math.random()
+
+
+                    task.wait(delay)
+
+
+                    if Terminated
+                        or myToken ~= RestockDelayToken then
+
+                        return
+                    end
+
+
+                    ApplyShopData(
+                        shopRestock
+                    )
+                end)
+            end
+        )
+
+    else
+
+        warn(
+            "[ShopRestock] state.sync not found."
+        )
+    end
+
+else
+
+    warn(
+        "[ShopRestock] RemoContainer unavailable."
+    )
+end
 
 
 --==================================================
@@ -2347,6 +2707,9 @@ CloseButton.MouseButton1Click:Connect(
 
 
         BlinkToken += 1
+
+
+        RestockDelayToken += 1
 
 
         SelectedItems =
