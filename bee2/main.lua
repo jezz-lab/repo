@@ -21,7 +21,7 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 --==================================================
 
 local SHOP_JSON_URL =
-    "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/shop.json"
+    "https://raw.githubusercontent.com/jezz-lab/repo/main/bee2/shop.json"
 
 local DEFAULT_SPEED = 16
 local SPEED = DEFAULT_SPEED
@@ -31,7 +31,7 @@ local AUTO_BUY = false
 local RESTOCK_BLINK_DURATION = 2
 local STATE_CHECK_INTERVAL = 0.03
 local PURCHASE_CONFIRM_TIMEOUT = 2
-local ITEM_SCROLL_HEIGHT = 180
+local ITEM_SCROLL_HEIGHT = 150
 
 
 --==================================================
@@ -65,7 +65,7 @@ ScreenGui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(420, 650)
+Main.Size = UDim2.fromOffset(280, 400)
 Main.Position = UDim2.new(0.5, -210, 0.5, -325)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.BorderSizePixel = 0
@@ -122,9 +122,9 @@ Title.Name = "Title"
 Title.Position = UDim2.fromOffset(26, 0)
 Title.Size = UDim2.new(1, -70, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Shop Restock"
+Title.Text = "Farm a Fish"
 Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 18
+Title.TextSize = 20
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.ZIndex = 21
