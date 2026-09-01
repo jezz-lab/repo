@@ -1,15 +1,10 @@
 {
     "None": {
         "gear": [
-            "Egg Hatcher",
             "Supreme Food Tray",
-            "Golden Cookie",
-            "Egg Incubator",
-            "Storm Horn",
-            "Extreme Auto Feeder"
+            "Egg Incubator"
         ],
-        "event": "Event shop items",
-        "bait": "Ocean Eater"
+        "event": ""
     },
 
     "gear": [
@@ -26,14 +21,14 @@
         "SupremeAutoFeeder",
         "TradingTicket",
         "PetToy",
-        "",
+        "EggHatcher",
         "",
         "PetWhistle",
-        "",
+        "GoldenCookie",
         "MutationBeacon",
         "",
-        "",
-        "",
+        "StormHorn",
+        "ExtremeAutoFeeder",
         "GodlyAutoFeeder"
     ],
 
@@ -68,7 +63,7 @@
         "Kraken",
         "Maw",
         "Bloop",
-        ""
+        "OceanEater"
     ],
 
     "eggs": [
