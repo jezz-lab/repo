@@ -45,7 +45,7 @@ local FeedKingBeeEvent = RemoContainer["bee.feedKingBeeAll"]
 --==================================================
 
 local SHOP_JSON_URL =
-    "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/shop.json"
+    "https://raw.githubusercontent.com/jezz-lab/repo/main/bee2/shop.json"
 
 local DEFAULT_SPEED = 16
 local SPEED = DEFAULT_SPEED
@@ -96,7 +96,7 @@ local Terminated = false
 --==================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ShopRestockGUI"
+ScreenGui.Name = "Far a Fish: Bee Event"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -108,7 +108,7 @@ ScreenGui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(420, 650)
+Main.Size = UDim2.fromOffset(360, 450)
 Main.Position = UDim2.new(0.5, -210, 0.5, -325)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.BorderSizePixel = 0
