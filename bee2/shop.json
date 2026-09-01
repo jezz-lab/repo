@@ -1,11 +1,17 @@
 {
     "None": {
-        "gear":  ["Egg Hatcher", "Supreme Food Tray", "Golden Cookie", "Egg Incubator", "Storm Horn", "Extreme Auto Feeder"]
-        "event": "Event shop items"
+        "gear": [
+            "Egg Hatcher",
+            "Supreme Food Tray",
+            "Golden Cookie",
+            "Egg Incubator",
+            "Storm Horn",
+            "Extreme Auto Feeder"
+        ],
+        "event": "Event shop items",
         "bait": "Ocean Eater"
-    }
+    },
 
-  
     "gear": [
         "BasicAutoFeeder",
         "FoodScoop",
@@ -17,19 +23,20 @@
         "XpCookie",
         "TeleportWand",
         "StarLock",
-        "SupremeAutoFeeder", 
+        "SupremeAutoFeeder",
         "TradingTicket",
         "PetToy",
         "",
         "",
-        "PetWhistle", 
+        "PetWhistle",
         "",
         "MutationBeacon",
         "",
         "",
         "",
-        "GodlyAutoFeeder",    
+        "GodlyAutoFeeder"
     ],
+
     "event": [
         "egg:Bee",
         "baitpack:Bee",
@@ -37,8 +44,9 @@
         "cosmeticExtra:Sunflower",
         "cosmeticExtra:HoneyComb",
         "cosmeticExtra:HoneyDipperLamp",
-        "cosmeticExtra:HoneyJacuzzi" 
+        "cosmeticExtra:HoneyJacuzzi"
     ],
+
     "bait": [
         "Starter",
         "Novice",
@@ -62,6 +70,7 @@
         "Bloop",
         ""
     ],
+
     "eggs": [
         "Bee",
         "Novice",
