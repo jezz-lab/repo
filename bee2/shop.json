@@ -1,78 +1,238 @@
 {
     "None": {
-        "gear": [
-            "Supreme Food Tray",
-            "Egg Incubator"
-        ],
-        "event": ""
+        "gear": ["Supreme Food Tray","Egg Incubator"],
+        "event": []
     },
 
     "gear": [
-        "BasicAutoFeeder",
-        "FoodScoop",
-        "BasicFoodTray",
-        "NetMover",
-        "MagnifyingGlass",
-        "AdvancedFoodTray",
-        "AdvancedAutoFeeder",
-        "XpCookie",
-        "TeleportWand",
-        "StarLock",
-        "SupremeAutoFeeder",
-        "TradingTicket",
-        "PetToy",
-        "EggHatcher",
-        "",
-        "PetWhistle",
-        "GoldenCookie",
-        "MutationBeacon",
-        "",
-        "StormHorn",
-        "ExtremeAutoFeeder",
-        "GodlyAutoFeeder"
+        {
+            "id": "BasicAutoFeeder",
+            "name": "Basic Auto Feeder"
+        },
+        {
+            "id": "FoodScoop",
+            "name": "Food Scoop"
+        },
+        {
+            "id": "BasicFoodTray",
+            "name": "Basic Food Tray"
+        },
+        {
+            "id": "NetMover",
+            "name": "Net Mover"
+        },
+        {
+            "id": "MagnifyingGlass",
+            "name": "Magnifying Glass"
+        },
+        {
+            "id": "AdvancedFoodTray",
+            "name": "Advanced Food Tray"
+        },
+        {
+            "id": "AdvancedAutoFeeder",
+            "name": "Advanced Auto Feeder"
+        },
+        {
+            "id": "XpCookie",
+            "name": "XP Cookie"
+        },
+        {
+            "id": "TeleportWand",
+            "name": "Teleport Wand"
+        },
+        {
+            "id": "StarLock",
+            "name": "Star Lock"
+        },
+        {
+            "id": "SupremeAutoFeeder",
+            "name": "Supreme Auto Feeder"
+        },
+        {
+            "id": "TradingTicket",
+            "name": "Trading Ticket"
+        },
+        {
+            "id": "PetToy",
+            "name": "Pet Toy"
+        },
+        {
+            "id": "EggHatcher",
+            "name": "Egg Hatcher"
+        },
+        {
+            "id": "PetWhistle",
+            "name": "Pet Whistle"
+        },
+        {
+            "id": "GoldenCookie",
+            "name": "Golden Cookie"
+        },
+        {
+            "id": "MutationBeacon",
+            "name": "Mutation Beacon"
+        },
+        {
+            "id": "StormHorn",
+            "name": "Storm Horn"
+        },
+        {
+            "id": "ExtremeAutoFeeder",
+            "name": "Extreme Auto Feeder"
+        },
+        {
+            "id": "GodlyAutoFeeder",
+            "name": "Godly Auto Feeder"
+        }
     ],
 
     "event": [
-        "egg:Bee",
-        "baitpack:Bee",
-        "cosmeticExtra:Daisy",
-        "cosmeticExtra:Sunflower",
-        "cosmeticExtra:HoneyComb",
-        "cosmeticExtra:HoneyDipperLamp",
-        "cosmeticExtra:HoneyJacuzzi"
+        {
+            "id": "egg:Bee",
+            "name": "Bee Egg"
+        },
+        {
+            "id": "baitpack:Bee",
+            "name": "Bee Bait Pack"
+        },
+        {
+            "id": "cosmeticExtra:Daisy",
+            "name": "Daisy"
+        },
+        {
+            "id": "cosmeticExtra:Sunflower",
+            "name": "Sunflower"
+        },
+        {
+            "id": "cosmeticExtra:HoneyComb",
+            "name": "Honey Comb"
+        },
+        {
+            "id": "cosmeticExtra:HoneyDipperLamp",
+            "name": "Honey Dipper Lamp"
+        },
+        {
+            "id": "cosmeticExtra:HoneyJacuzzi",
+            "name": "Honey Jacuzzi"
+        }
     ],
 
     "bait": [
-        "Starter",
-        "Novice",
-        "Reef",
-        "DeepSea",
-        "Koi",
-        "River",
-        "Puffer",
-        "Glo",
-        "Seal",
-        "Ray",
-        "Octopus",
-        "Axolotl",
-        "Jelly",
-        "Whale",
-        "Squid",
-        "Shark",
-        "Megalodon",
-        "Kraken",
-        "Maw",
-        "Bloop",
-        "OceanEater"
+        {
+            "id": "Starter",
+            "name": "Starter Bait"
+        },
+        {
+            "id": "Novice",
+            "name": "Novice Bait"
+        },
+        {
+            "id": "Reef",
+            "name": "Reef Bait"
+        },
+        {
+            "id": "DeepSea",
+            "name": "Deep Sea Bait"
+        },
+        {
+            "id": "Koi",
+            "name": "Koi Bait"
+        },
+        {
+            "id": "River",
+            "name": "River Bait"
+        },
+        {
+            "id": "Puffer",
+            "name": "Puffer Bait"
+        },
+        {
+            "id": "Glo",
+            "name": "Glo Bait"
+        },
+        {
+            "id": "Seal",
+            "name": "Seal Bait"
+        },
+        {
+            "id": "Ray",
+            "name": "Ray Bait"
+        },
+        {
+            "id": "Octopus",
+            "name": "Octopus Bait"
+        },
+        {
+            "id": "Axolotl",
+            "name": "Axolotl Bait"
+        },
+        {
+            "id": "Jelly",
+            "name": "Jelly Bait"
+        },
+        {
+            "id": "Whale",
+            "name": "Whale Bait"
+        },
+        {
+            "id": "Squid",
+            "name": "Squid Bait"
+        },
+        {
+            "id": "Shark",
+            "name": "Shark Bait"
+        },
+        {
+            "id": "Megalodon",
+            "name": "Megalodon Bait"
+        },
+        {
+            "id": "Kraken",
+            "name": "Kraken Bait"
+        },
+        {
+            "id": "Maw",
+            "name": "Maw Bait"
+        },
+        {
+            "id": "Bloop",
+            "name": "Bloop Bait"
+        },
+        {
+            "id": "OceanEater",
+            "name": "Ocean Eater Bait"
+        }
     ],
 
     "eggs": [
-        "Bee",
-        "Novice",
-        "Starter",
-        "Forest",
-        "Polar",
-        "Tropical",
-        "Exotic"
+        {
+            "id": "Bee",
+            "name": "Bee Egg"
+        },
+        {
+            "id": "Novice",
+            "name": "Novice Egg"
+        },
+        {
+            "id": "Starter",
+            "name": "Starter Egg"
+        },
+        {
+            "id": "Forest",
+            "name": "Forest Egg"
+        },
+        {
+            "id": "Polar",
+            "name": "Polar Egg"
+        },
+        {
+            "id": "Tropical",
+            "name": "Tropical Egg"
+        },
+        {
+            "id": "Exotic",
+            "name": "Exotic Egg"
+        }
     ]
 }
