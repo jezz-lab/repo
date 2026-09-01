@@ -38,7 +38,7 @@ local FeedKingBeeEvent = RemoContainer["bee.feedKingBeeAll"]
 --==================================================
 
 local SHOP_JSON_URL =
-    "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/shop.json"
+    "https://raw.githubusercontent.com/jezz-lab/repo/main/bee2/shop.json"
 
 local DEFAULT_SPEED = 16
 local SPEED = DEFAULT_SPEED
