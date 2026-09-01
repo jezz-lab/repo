@@ -1,9 +1,9 @@
 --Farm a fish: bee event
 
-
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
 --==================================================
+
 
 --==================================================
 -- SERVICES
@@ -24,7 +24,7 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 
 
 --==================================================
--- REMOTES
+-- REMOTE CONTAINER
 --==================================================
 
 local RemoContainer =
@@ -36,8 +36,26 @@ local RemoContainer =
         .container
 
 local StateSync = RemoContainer["state.sync"]
-local PurchaseEvent = RemoContainer["shop.purchaseEventItem"]
-local FeedKingBeeEvent = RemoContainer["bee.feedKingBeeAll"]
+
+-- Event shop
+local PurchaseEvent =
+    RemoContainer["shop.purchaseEventItem"]
+
+-- Gear shop
+local PurchaseGear =
+    RemoContainer["shop.purchaseGear"]
+
+-- Egg shop
+local PurchaseEgg =
+    RemoContainer["shop.purchaseEgg"]
+
+-- Bait shop
+local PurchaseBait =
+    RemoContainer["shop.purchaseBait"]
+
+-- King Bee
+local FeedKingBeeEvent =
+    RemoContainer["bee.feedKingBeeAll"]
 
 
 --==================================================
@@ -52,15 +70,12 @@ local SPEED = DEFAULT_SPEED
 
 local AUTO_RUNNING = false
 
--- Restock notification duration.
 local RESTOCK_BLINK_DURATION = 2
 
--- Item list maximum visible height.
-local ITEM_SCROLL_HEIGHT = 180
-
--- Purchase state confirmation.
 local STATE_CHECK_INTERVAL = 0.03
 local PURCHASE_CONFIRM_TIMEOUT = 2
+
+local ITEM_SCROLL_HEIGHT = 180
 
 
 --==================================================
@@ -96,7 +111,7 @@ local Terminated = false
 --==================================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Far a Fish: Bee Event"
+ScreenGui.Name = "Farm a Fish: Bee Event 2"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
@@ -108,7 +123,7 @@ ScreenGui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(360, 450)
+Main.Size = UDim2.fromOffset(340, 420)
 Main.Position = UDim2.new(0.5, -210, 0.5, -325)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.BorderSizePixel = 0
@@ -197,7 +212,7 @@ CloseCorner.Parent = CloseButton
 
 
 --==================================================
--- MAIN SCROLLBAR
+-- MAIN SCROLL
 --==================================================
 
 local MainScroll = Instance.new("ScrollingFrame")
@@ -241,9 +256,7 @@ local SpeedCorner = Instance.new("UICorner")
 SpeedCorner.CornerRadius = UDim.new(0, 6)
 SpeedCorner.Parent = SpeedFrame
 
-
 local SpeedLabel = Instance.new("TextLabel")
-SpeedLabel.Name = "SpeedLabel"
 SpeedLabel.Position = UDim2.fromOffset(10, 0)
 SpeedLabel.Size = UDim2.fromOffset(60, 42)
 SpeedLabel.BackgroundTransparency = 1
@@ -253,7 +266,6 @@ SpeedLabel.TextSize = 14
 SpeedLabel.Font = Enum.Font.GothamBold
 SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 SpeedLabel.Parent = SpeedFrame
-
 
 local SpeedBox = Instance.new("TextBox")
 SpeedBox.Name = "SpeedBox"
@@ -272,7 +284,6 @@ SpeedBox.Parent = SpeedFrame
 local SpeedBoxCorner = Instance.new("UICorner")
 SpeedBoxCorner.CornerRadius = UDim.new(0, 4)
 SpeedBoxCorner.Parent = SpeedBox
-
 
 local StartButton = Instance.new("TextButton")
 StartButton.Name = "StartButton"
@@ -448,18 +459,13 @@ end)
 --==================================================
 
 local function IsAvailable(stock)
-
-    return type(stock) == "number"
-        and stock > 0
+    return type(stock) == "number" and stock > 0
 end
 
-
 local function IsNone(stock)
-
     return type(stock) == "table"
         and stock.__none == "__none"
 end
-
 
 local function GetStatusText(stock)
 
@@ -472,6 +478,39 @@ local function GetStatusText(stock)
     end
 
     return "[Not Restocked]"
+end
+
+
+--==================================================
+-- CATEGORY PURCHASE
+--==================================================
+
+local function PurchaseItem(category, itemName)
+
+    if category == "event" then
+
+        PurchaseEvent:FireServer(itemName)
+
+    elseif category == "gear" then
+
+        PurchaseGear:FireServer(itemName)
+
+    elseif category == "eggs" then
+
+        PurchaseEgg:FireServer(itemName)
+
+    elseif category == "bait" then
+
+        PurchaseBait:FireServer(itemName)
+
+    else
+
+        warn(
+            "[ShopRestock] Unknown category:",
+            category,
+            itemName
+        )
+    end
 end
 
 
@@ -549,70 +588,10 @@ end
 
 
 --==================================================
--- CATEGORY MESSAGE
---==================================================
-
-local function ShowCategoryMessage(
-    category,
-    message,
-    textColor
-)
-
-    local categoryData =
-        Categories[category]
-
-    if not categoryData then
-        return
-    end
-
-    -- Clear current item rows.
-    for _, child in ipairs(
-        categoryData.List:GetChildren()
-    ) do
-
-        if not child:IsA("UIListLayout") then
-            child:Destroy()
-        end
-    end
-
-    categoryData.Items = {}
-
-    local Label =
-        Instance.new("TextLabel")
-
-    Label.Name = "Status"
-
-    Label.Size =
-        UDim2.new(1, -10, 0, 30)
-
-    Label.BackgroundTransparency = 1
-
-    Label.Text =
-        "  " .. message
-
-    Label.TextColor3 =
-        textColor
-        or Color3.fromRGB(140, 140, 140)
-
-    Label.TextSize = 13
-    Label.Font = Enum.Font.Gotham
-
-    Label.TextXAlignment =
-        Enum.TextXAlignment.Left
-
-    Label.Parent =
-        categoryData.List
-end
-
-
---==================================================
 -- UPDATE ITEM VISUAL
 --==================================================
 
-local function UpdateItemVisual(
-    itemData,
-    stock
-)
+local function UpdateItemVisual(itemData, stock)
 
     if not itemData then
         return
@@ -689,15 +668,21 @@ local function AutoBuy(
             local stock =
                 categoryStock[itemName]
 
-            -- __none and missing items stop purchasing.
             if not IsAvailable(stock) then
                 break
             end
 
+            -- Save the reported stock before purchase.
             local oldStock = stock
 
-            PurchaseEvent:FireServer(itemName)
+            -- Use the correct remote for this category.
+            PurchaseItem(
+                category,
+                itemName
+            )
 
+            -- Wait for state.sync to report
+            -- a change in the shop state.
             local changed = false
             local startTime = os.clock()
 
@@ -718,11 +703,12 @@ local function AutoBuy(
                 if latestStock ~= oldStock then
 
                     changed = true
-
                     break
                 end
             end
 
+            -- Don't repeatedly fire if the server
+            -- did not report a state change.
             if not changed then
                 break
             end
@@ -734,7 +720,7 @@ end
 
 
 --==================================================
--- SET SELECTED
+-- SET SELECTION
 --==================================================
 
 local function SetSelected(
@@ -770,7 +756,6 @@ local function SetSelected(
         end
     end
 
-    -- Start immediately if possible.
     if enabled
         and AUTO_RUNNING then
 
@@ -790,7 +775,7 @@ end
 
 
 --==================================================
--- CREATE EMPTY CATEGORY
+-- CREATE CATEGORY
 --==================================================
 
 local function CreateEmptyCategory(
@@ -851,14 +836,14 @@ local function CreateEmptyCategory(
         Color3.new(1, 1, 1)
 
     Header.TextSize = 15
-
     Header.Font =
         Enum.Font.GothamBold
 
     Header.TextXAlignment =
         Enum.TextXAlignment.Left
 
-    Header.Parent = Container
+    Header.Parent =
+        Container
 
 
     --==================================================
@@ -897,7 +882,8 @@ local function CreateEmptyCategory(
 
     ItemScroll.Visible = true
 
-    ItemScroll.Parent = Container
+    ItemScroll.Parent =
+        Container
 
 
     --==================================================
@@ -913,7 +899,8 @@ local function CreateEmptyCategory(
     ItemLayout.SortOrder =
         Enum.SortOrder.LayoutOrder
 
-    ItemLayout.Parent = ItemScroll
+    ItemLayout.Parent =
+        ItemScroll
 
 
     --==================================================
@@ -939,7 +926,7 @@ local function CreateEmptyCategory(
 
 
     --==================================================
-    -- DROPDOWN
+    -- TOGGLE
     --==================================================
 
     Header.MouseButton1Click:Connect(function()
@@ -964,7 +951,63 @@ end
 
 
 --==================================================
--- CREATE DROPDOWNS WITH MAIN GUI
+-- CATEGORY MESSAGE
+--==================================================
+
+function ShowCategoryMessage(
+    category,
+    message,
+    textColor
+)
+
+    local categoryData =
+        Categories[category]
+
+    if not categoryData then
+        return
+    end
+
+    for _, child in ipairs(
+        categoryData.List:GetChildren()
+    ) do
+
+        if not child:IsA("UIListLayout") then
+            child:Destroy()
+        end
+    end
+
+    categoryData.Items = {}
+
+    local Label =
+        Instance.new("TextLabel")
+
+    Label.Name = "Status"
+
+    Label.Size =
+        UDim2.new(1, -10, 0, 30)
+
+    Label.BackgroundTransparency = 1
+
+    Label.Text =
+        "  " .. message
+
+    Label.TextColor3 =
+        textColor
+        or Color3.fromRGB(140, 140, 140)
+
+    Label.TextSize = 13
+    Label.Font = Enum.Font.Gotham
+
+    Label.TextXAlignment =
+        Enum.TextXAlignment.Left
+
+    Label.Parent =
+        categoryData.List
+end
+
+
+--==================================================
+-- CREATE DROPDOWNS IMMEDIATELY
 --==================================================
 
 CreateEmptyCategory("gear", 5)
@@ -1026,16 +1069,14 @@ local function PopulateCategory(
         return
     end
 
-
     ClearCategoryItems(category)
-
 
     local validCount = 0
 
     for index, itemName
         in ipairs(itemList) do
 
-        -- Ignore blank JSON entries.
+        -- Ignore blank entries.
         if type(itemName) == "string"
             and itemName ~= "" then
 
@@ -1054,9 +1095,7 @@ local function PopulateCategory(
                 Instance.new("Frame")
 
             Row.Name = itemName
-
-            Row.LayoutOrder =
-                index
+            Row.LayoutOrder = index
 
             Row.Size =
                 UDim2.new(1, -8, 0, 34)
@@ -1151,7 +1190,7 @@ local function PopulateCategory(
 
 
             --==================================================
-            -- ITEM DATA
+            -- SAVE ITEM
             --==================================================
 
             local ItemData = {
@@ -1182,14 +1221,14 @@ local function PopulateCategory(
                     return
                 end
 
-                local currentlySelected =
+                local selectedNow =
                     SelectedItems[category]
                     and SelectedItems[category][itemName]
 
                 SetSelected(
                     category,
                     itemName,
-                    not currentlySelected
+                    not selectedNow
                 )
             end)
         end
@@ -1208,25 +1247,6 @@ end
 
 
 --==================================================
--- JSON ERROR DISPLAY
---==================================================
-
-local function ShowJsonErrorForCategories(
-    message
-)
-
-    for _, category in ipairs(CategoryOrder) do
-
-        ShowCategoryMessage(
-            category,
-            message,
-            Color3.fromRGB(200, 100, 100)
-        )
-    end
-end
-
-
---==================================================
 -- LOAD SHOP.JSON
 --==================================================
 
@@ -1239,12 +1259,18 @@ local function LoadShopJson()
             true
         ) then
 
-        ShowJsonErrorForCategories(
-            "Set shop.json URL"
-        )
+        for _, category
+            in ipairs(CategoryOrder) do
+
+            ShowCategoryMessage(
+                category,
+                "Set shop.json URL",
+                Color3.fromRGB(200, 100, 100)
+            )
+        end
 
         warn(
-            "[ShopRestock] SHOP_JSON_URL is not configured."
+            "[ShopRestock] Set SHOP_JSON_URL first."
         )
 
         return false
@@ -1263,9 +1289,15 @@ local function LoadShopJson()
 
     if not success then
 
-        ShowJsonErrorForCategories(
-            "Failed to fetch JSON"
-        )
+        for _, category
+            in ipairs(CategoryOrder) do
+
+            ShowCategoryMessage(
+                category,
+                "Failed to fetch JSON",
+                Color3.fromRGB(200, 100, 100)
+            )
+        end
 
         warn(
             "[ShopRestock] HTTP error:",
@@ -1279,19 +1311,21 @@ local function LoadShopJson()
     if type(response) ~= "string"
         or response == "" then
 
-        ShowJsonErrorForCategories(
-            "Empty JSON"
-        )
+        for _, category
+            in ipairs(CategoryOrder) do
 
-        warn(
-            "[ShopRestock] Empty response."
-        )
+            ShowCategoryMessage(
+                category,
+                "Empty JSON",
+                Color3.fromRGB(200, 100, 100)
+            )
+        end
 
         return false
     end
 
 
-    -- Remove UTF-8 BOM if present.
+    -- Remove UTF-8 BOM.
     response =
         response:gsub(
             "^\239\187\191",
@@ -1311,9 +1345,15 @@ local function LoadShopJson()
 
     if not decodeSuccess then
 
-        ShowJsonErrorForCategories(
-            "Invalid JSON"
-        )
+        for _, category
+            in ipairs(CategoryOrder) do
+
+            ShowCategoryMessage(
+                category,
+                "Invalid JSON",
+                Color3.fromRGB(200, 100, 100)
+            )
+        end
 
         warn(
             "[ShopRestock] JSON decode error:",
@@ -1326,13 +1366,15 @@ local function LoadShopJson()
 
     if type(decoded) ~= "table" then
 
-        ShowJsonErrorForCategories(
-            "Invalid JSON object"
-        )
+        for _, category
+            in ipairs(CategoryOrder) do
 
-        warn(
-            "[ShopRestock] JSON root is not an object."
-        )
+            ShowCategoryMessage(
+                category,
+                "Invalid JSON object",
+                Color3.fromRGB(200, 100, 100)
+            )
+        end
 
         return false
     end
@@ -1345,7 +1387,7 @@ end
 
 
 --==================================================
--- BUILD JSON ITEMS
+-- BUILD FROM JSON
 --==================================================
 
 local function BuildFromJson()
@@ -1384,7 +1426,7 @@ end
 
 
 --==================================================
--- REFRESH ALL ITEMS
+-- REFRESH ITEMS
 --==================================================
 
 local function RefreshAllItems()
@@ -1409,7 +1451,7 @@ end
 
 
 --==================================================
--- APPLY RESTOCK DATA
+-- APPLY RESTOCK
 --==================================================
 
 local function ApplyShopData(shopRestock)
@@ -1426,17 +1468,14 @@ local function ApplyShopData(shopRestock)
     end
 
 
-    -- Update only supplied categories.
     for _, category
         in ipairs(CategoryOrder) do
 
-        local categoryItems =
-            availableItems[category]
-
-        if type(categoryItems) == "table" then
+        if type(availableItems[category])
+            == "table" then
 
             CurrentStock[category] =
-                categoryItems
+                availableItems[category]
         end
     end
 
@@ -1514,7 +1553,7 @@ end)
 
 
 --==================================================
--- DEFAULT
+-- DEFAULT SPEED
 --==================================================
 
 DefaultButton.MouseButton1Click:Connect(function()
@@ -1682,12 +1721,12 @@ end)
 -- INITIALIZE
 --==================================================
 
--- GUI and empty dropdowns already exist.
 ApplySpeed()
 
-
--- JSON loads AFTER GUI creation.
 task.spawn(function()
+
+    -- GUI + dropdown headers already exist.
+    -- JSON is fetched afterward.
 
     local loaded =
         LoadShopJson()
