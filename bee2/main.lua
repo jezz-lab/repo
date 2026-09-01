@@ -2,6 +2,7 @@
 -- SHOP RESTOCK AUTO BUY GUI
 --==================================================
 
+
 --==================================================
 -- SERVICES
 --==================================================
@@ -36,7 +37,7 @@ local RESTOCK_BLINK_DURATION = 2
 
 local PURCHASE_INTERVAL = 0.05
 
-local ITEM_SCROLL_HEIGHT = 180
+local ITEM_SCROLL_HEIGHT = 150
 
 
 --==================================================
@@ -68,6 +69,8 @@ local Categories = {}
 local BlinkToken = 0
 
 local Terminated = false
+
+local RestockDelayToken = 0   -- for debouncing delayed restock application
 
 
 --==================================================
@@ -2501,12 +2504,24 @@ StateSync.OnClientEvent:Connect(
         end
 
 
+        -- Blink the dot immediately
         BlinkRestockDot()
 
 
-        ApplyShopData(
-            shopRestock
-        )
+        -- Delay applying the restock by 1–2 seconds (random)
+        RestockDelayToken = RestockDelayToken + 1
+        local myToken = RestockDelayToken
+
+        task.spawn(function()
+            local delay = 1 + math.random()  -- between 1 and 2 seconds
+            task.wait(delay)
+
+            if Terminated or myToken ~= RestockDelayToken then
+                return
+            end
+
+            ApplyShopData(shopRestock)
+        end)
     end
 )
 
