@@ -1,9 +1,8 @@
---Farm a fish: bee event
+--Farm a fish: bee event (change title in the shop restock header)
 
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
 --==================================================
-
 
 --==================================================
 -- SERVICES
@@ -37,23 +36,18 @@ local RemoContainer =
 
 local StateSync = RemoContainer["state.sync"]
 
--- Event shop
 local PurchaseEvent =
     RemoContainer["shop.purchaseEventItem"]
 
--- Gear shop
 local PurchaseGear =
     RemoContainer["shop.purchaseGear"]
 
--- Egg shop
 local PurchaseEgg =
     RemoContainer["shop.purchaseEgg"]
 
--- Bait shop
 local PurchaseBait =
     RemoContainer["shop.purchaseBait"]
 
--- King Bee
 local FeedKingBeeEvent =
     RemoContainer["bee.feedKingBeeAll"]
 
@@ -75,7 +69,7 @@ local RESTOCK_BLINK_DURATION = 2
 local STATE_CHECK_INTERVAL = 0.03
 local PURCHASE_CONFIRM_TIMEOUT = 2
 
-local ITEM_SCROLL_HEIGHT = 180
+local ITEM_SCROLL_HEIGHT = 150
 
 
 --==================================================
@@ -123,7 +117,7 @@ ScreenGui.Parent = PlayerGui
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(340, 420)
+Main.Size = UDim2.fromOffset(320, 460)
 Main.Position = UDim2.new(0.5, -210, 0.5, -325)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.BorderSizePixel = 0
@@ -285,21 +279,26 @@ local SpeedBoxCorner = Instance.new("UICorner")
 SpeedBoxCorner.CornerRadius = UDim.new(0, 4)
 SpeedBoxCorner.Parent = SpeedBox
 
-local StartButton = Instance.new("TextButton")
-StartButton.Name = "StartButton"
-StartButton.Position = UDim2.new(1, -95, 0, 6)
-StartButton.Size = UDim2.fromOffset(85, 30)
-StartButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-StartButton.BorderSizePixel = 0
-StartButton.Text = "Start"
-StartButton.TextColor3 = Color3.new(1, 1, 1)
-StartButton.TextSize = 14
-StartButton.Font = Enum.Font.GothamBold
-StartButton.Parent = SpeedFrame
 
-local StartCorner = Instance.new("UICorner")
-StartCorner.CornerRadius = UDim.new(0, 4)
-StartCorner.Parent = StartButton
+--==================================================
+-- SET SPEED BUTTON
+--==================================================
+
+local SetSpeedButton = Instance.new("TextButton")
+SetSpeedButton.Name = "SetSpeedButton"
+SetSpeedButton.Position = UDim2.new(1, -95, 0, 6)
+SetSpeedButton.Size = UDim2.fromOffset(85, 30)
+SetSpeedButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+SetSpeedButton.BorderSizePixel = 0
+SetSpeedButton.Text = "Set"
+SetSpeedButton.TextColor3 = Color3.new(1, 1, 1)
+SetSpeedButton.TextSize = 14
+SetSpeedButton.Font = Enum.Font.GothamBold
+SetSpeedButton.Parent = SpeedFrame
+
+local SetSpeedCorner = Instance.new("UICorner")
+SetSpeedCorner.CornerRadius = UDim.new(0, 4)
+SetSpeedCorner.Parent = SetSpeedButton
 
 
 --==================================================
@@ -355,10 +354,42 @@ ShopHeader.Size = UDim2.new(1, -2, 0, 30)
 ShopHeader.BackgroundTransparency = 1
 ShopHeader.Text = "Farm a Fish: Bee Event 2"
 ShopHeader.TextColor3 = Color3.new(1, 1, 1)
-ShopHeader.TextSize = 16
+ShopHeader.TextSize = 14
 ShopHeader.Font = Enum.Font.GothamBold
 ShopHeader.TextXAlignment = Enum.TextXAlignment.Left
 ShopHeader.Parent = MainScroll
+
+
+--==================================================
+-- HELPERS
+--==================================================
+
+local function IsAvailable(stock)
+
+    return type(stock) == "number"
+        and stock > 0
+end
+
+
+local function IsNone(stock)
+
+    return type(stock) == "table"
+        and stock.__none == "__none"
+end
+
+
+local function GetStatusText(stock)
+
+    if IsAvailable(stock) then
+        return "[" .. tostring(stock) .. "]"
+    end
+
+    if IsNone(stock) then
+        return "[Unavailable]"
+    end
+
+    return "[Not Restocked]"
+end
 
 
 --==================================================
@@ -407,7 +438,8 @@ local function MakeDraggable(object, dragHandle)
             return
         end
 
-        local delta = input.Position - dragStart
+        local delta =
+            input.Position - dragStart
 
         object.Position = UDim2.new(
             startPosition.X.Scale,
@@ -452,33 +484,6 @@ ToggleButton.MouseButton1Click:Connect(function()
 
     Main.Visible = not Main.Visible
 end)
-
-
---==================================================
--- HELPERS
---==================================================
-
-local function IsAvailable(stock)
-    return type(stock) == "number" and stock > 0
-end
-
-local function IsNone(stock)
-    return type(stock) == "table"
-        and stock.__none == "__none"
-end
-
-local function GetStatusText(stock)
-
-    if IsAvailable(stock) then
-        return "[" .. tostring(stock) .. "]"
-    end
-
-    if IsNone(stock) then
-        return "[Unavailable]"
-    end
-
-    return "[Not Restocked]"
-end
 
 
 --==================================================
@@ -566,9 +571,12 @@ local function BlinkRestockDot()
             RestockDot.Visible = true
 
             if green then
+
                 RestockDot.BackgroundColor3 =
                     Color3.fromRGB(0, 255, 0)
+
             else
+
                 RestockDot.BackgroundColor3 =
                     Color3.fromRGB(255, 0, 0)
             end
@@ -632,11 +640,11 @@ end
 --==================================================
 -- AUTO BUY
 --==================================================
+-- Selected items remain armed while out of stock.
+-- They wait for state.sync/restock instead of stopping.
+--==================================================
 
-local function AutoBuy(
-    category,
-    itemName
-)
+local function AutoBuy(category, itemName)
 
     local key =
         category .. ":" .. itemName
@@ -652,39 +660,61 @@ local function AutoBuy(
         while not Terminated
             and AUTO_RUNNING do
 
+            -- Stop if unchecked.
             if not SelectedItems[category]
                 or not SelectedItems[category][itemName] then
 
                 break
             end
 
+
+            --==================================================
+            -- CURRENT STOCK
+            --==================================================
+
             local categoryStock =
                 CurrentStock[category]
 
-            if not categoryStock then
-                break
-            end
-
             local stock =
-                categoryStock[itemName]
+                categoryStock
+                and categoryStock[itemName]
+
+
+            --==================================================
+            -- NO STOCK
+            --==================================================
+            -- Do not break.
+            -- Remain active and wait for restock.
+            --==================================================
 
             if not IsAvailable(stock) then
-                break
+
+                task.wait(STATE_CHECK_INTERVAL)
+
+                continue
             end
 
-            -- Save the reported stock before purchase.
+
+            --==================================================
+            -- PURCHASE
+            --==================================================
+
             local oldStock = stock
 
-            -- Use the correct remote for this category.
             PurchaseItem(
                 category,
                 itemName
             )
 
-            -- Wait for state.sync to report
-            -- a change in the shop state.
+
+            --==================================================
+            -- WAIT FOR STOCK CHANGE
+            --==================================================
+
             local changed = false
-            local startTime = os.clock()
+
+            local startTime =
+                os.clock()
 
             while not Terminated
                 and AUTO_RUNNING
@@ -692,6 +722,12 @@ local function AutoBuy(
                     < PURCHASE_CONFIRM_TIMEOUT do
 
                 task.wait(STATE_CHECK_INTERVAL)
+
+                if not SelectedItems[category]
+                    or not SelectedItems[category][itemName] then
+
+                    break
+                end
 
                 local latestCategory =
                     CurrentStock[category]
@@ -707,10 +743,15 @@ local function AutoBuy(
                 end
             end
 
-            -- Don't repeatedly fire if the server
-            -- did not report a state change.
+
+            --==================================================
+            -- NO CONFIRMATION
+            --==================================================
+
             if not changed then
-                break
+
+                -- Prevent rapid remote spam.
+                task.wait(STATE_CHECK_INTERVAL)
             end
         end
 
@@ -756,21 +797,74 @@ local function SetSelected(
         end
     end
 
+
+    -- Start an auto-buy worker when selected.
+    -- It will wait if there is currently no stock.
+
     if enabled
         and AUTO_RUNNING then
 
-        local stock =
-            CurrentStock[category]
-            and CurrentStock[category][itemName]
+        AutoBuy(
+            category,
+            itemName
+        )
+    end
+end
 
-        if IsAvailable(stock) then
 
-            AutoBuy(
-                category,
-                itemName
-            )
+--==================================================
+-- CATEGORY MESSAGE
+--==================================================
+
+local function ShowCategoryMessage(
+    category,
+    message,
+    textColor
+)
+
+    local categoryData =
+        Categories[category]
+
+    if not categoryData then
+        return
+    end
+
+    for _, child in ipairs(
+        categoryData.List:GetChildren()
+    ) do
+
+        if not child:IsA("UIListLayout") then
+            child:Destroy()
         end
     end
+
+    categoryData.Items = {}
+
+    local Label =
+        Instance.new("TextLabel")
+
+    Label.Name = "Status"
+
+    Label.Size =
+        UDim2.new(1, -10, 0, 30)
+
+    Label.BackgroundTransparency = 1
+
+    Label.Text =
+        "  " .. message
+
+    Label.TextColor3 =
+        textColor
+        or Color3.fromRGB(140, 140, 140)
+
+    Label.TextSize = 13
+    Label.Font = Enum.Font.Gotham
+
+    Label.TextXAlignment =
+        Enum.TextXAlignment.Left
+
+    Label.Parent =
+        categoryData.List
 end
 
 
@@ -836,6 +930,7 @@ local function CreateEmptyCategory(
         Color3.new(1, 1, 1)
 
     Header.TextSize = 15
+
     Header.Font =
         Enum.Font.GothamBold
 
@@ -951,63 +1046,7 @@ end
 
 
 --==================================================
--- CATEGORY MESSAGE
---==================================================
-
-function ShowCategoryMessage(
-    category,
-    message,
-    textColor
-)
-
-    local categoryData =
-        Categories[category]
-
-    if not categoryData then
-        return
-    end
-
-    for _, child in ipairs(
-        categoryData.List:GetChildren()
-    ) do
-
-        if not child:IsA("UIListLayout") then
-            child:Destroy()
-        end
-    end
-
-    categoryData.Items = {}
-
-    local Label =
-        Instance.new("TextLabel")
-
-    Label.Name = "Status"
-
-    Label.Size =
-        UDim2.new(1, -10, 0, 30)
-
-    Label.BackgroundTransparency = 1
-
-    Label.Text =
-        "  " .. message
-
-    Label.TextColor3 =
-        textColor
-        or Color3.fromRGB(140, 140, 140)
-
-    Label.TextSize = 13
-    Label.Font = Enum.Font.Gotham
-
-    Label.TextXAlignment =
-        Enum.TextXAlignment.Left
-
-    Label.Parent =
-        categoryData.List
-end
-
-
---==================================================
--- CREATE DROPDOWNS IMMEDIATELY
+-- CREATE CATEGORIES
 --==================================================
 
 CreateEmptyCategory("gear", 5)
@@ -1076,7 +1115,6 @@ local function PopulateCategory(
     for index, itemName
         in ipairs(itemList) do
 
-        -- Ignore blank entries.
         if type(itemName) == "string"
             and itemName ~= "" then
 
@@ -1283,7 +1321,6 @@ local function LoadShopJson()
             return game:HttpGet(
                 SHOP_JSON_URL
             )
-
         end)
 
 
@@ -1339,7 +1376,6 @@ local function LoadShopJson()
             return HttpService:JSONDecode(
                 response
             )
-
         end)
 
 
@@ -1468,6 +1504,10 @@ local function ApplyShopData(shopRestock)
     end
 
 
+    --==================================================
+    -- UPDATE CURRENT STOCK
+    --==================================================
+
     for _, category
         in ipairs(CategoryOrder) do
 
@@ -1492,43 +1532,74 @@ local function ApplyShopData(shopRestock)
     end
 
 
-    for category, selected
-        in pairs(SelectedItems) do
+    task.defer(function()
 
-        local categoryStock =
-            CurrentStock[category]
+        if Terminated
+            or not AUTO_RUNNING then
+            return
+        end
 
-        if categoryStock then
+
+        -- Start workers for every selected item.
+        -- They handle both stocked and unstocked states.
+
+        for category, selected
+            in pairs(SelectedItems) do
 
             for itemName, enabled
                 in pairs(selected) do
 
                 if enabled then
 
-                    local stock =
-                        categoryStock[itemName]
-
-                    if IsAvailable(stock) then
-
-                        AutoBuy(
-                            category,
-                            itemName
-                        )
-                    end
+                    AutoBuy(
+                        category,
+                        itemName
+                    )
                 end
             end
         end
-    end
+    end)
 end
 
 
 --==================================================
--- SPEED INPUT
+-- SPEED SET
 --==================================================
 
-SpeedBox.FocusLost:Connect(function()
+SetSpeedButton.MouseButton1Click:Connect(function()
 
     if Terminated then
+        return
+    end
+
+    local value =
+        tonumber(SpeedBox.Text)
+
+    if value then
+
+        SPEED = value
+
+        SpeedBox.Text =
+            tostring(SPEED)
+
+        ApplySpeed()
+
+    else
+
+        SpeedBox.Text =
+            tostring(SPEED)
+    end
+end)
+
+
+--==================================================
+-- SPEED ENTER KEY
+--==================================================
+
+SpeedBox.FocusLost:Connect(function(enterPressed)
+
+    if Terminated
+        or not enterPressed then
         return
     end
 
@@ -1572,56 +1643,86 @@ end)
 
 
 --==================================================
--- START / STOP
+-- AUTO BUY START / STOP
 --==================================================
 
-StartButton.MouseButton1Click:Connect(function()
+local AutoStartButton = Instance.new("TextButton")
+
+AutoStartButton.Name = "AutoStartButton"
+AutoStartButton.LayoutOrder = 9
+
+AutoStartButton.Size =
+    UDim2.new(1, -2, 0, 40)
+
+AutoStartButton.BackgroundColor3 =
+    Color3.fromRGB(45, 45, 45)
+
+AutoStartButton.BorderSizePixel = 0
+
+AutoStartButton.Text =
+    "Start Auto Buy"
+
+AutoStartButton.TextColor3 =
+    Color3.new(1, 1, 1)
+
+AutoStartButton.TextSize = 14
+
+AutoStartButton.Font =
+    Enum.Font.GothamBold
+
+AutoStartButton.Parent =
+    MainScroll
+
+local AutoStartCorner =
+    Instance.new("UICorner")
+
+AutoStartCorner.CornerRadius =
+    UDim.new(0, 6)
+
+AutoStartCorner.Parent =
+    AutoStartButton
+
+
+AutoStartButton.MouseButton1Click:Connect(function()
 
     if Terminated then
         return
     end
 
+
     AUTO_RUNNING =
         not AUTO_RUNNING
 
-    StartButton.Text =
-        AUTO_RUNNING
-        and "Stop"
-        or "Start"
+
+    if AUTO_RUNNING then
+
+        AutoStartButton.Text =
+            "Stop Auto Buy"
 
 
-    if not AUTO_RUNNING then
-        return
-    end
+        -- Start every selected item.
+        -- No-stock items stay waiting.
 
-
-    -- Start all selected stocked items.
-    for category, selected
-        in pairs(SelectedItems) do
-
-        local categoryStock =
-            CurrentStock[category]
-
-        if categoryStock then
+        for category, selected
+            in pairs(SelectedItems) do
 
             for itemName, enabled
                 in pairs(selected) do
 
                 if enabled then
 
-                    local stock =
-                        categoryStock[itemName]
-
-                    if IsAvailable(stock) then
-
-                        AutoBuy(
-                            category,
-                            itemName
-                        )
-                    end
+                    AutoBuy(
+                        category,
+                        itemName
+                    )
                 end
             end
         end
+
+    else
+
+        AutoStartButton.Text =
+            "Start Auto Buy"
     end
 end)
 
@@ -1678,12 +1779,14 @@ StateSync.OnClientEvent:Connect(function(payload)
         return
     end
 
+
     local shopRestock =
         payload.data.shopRestock
 
     if not shopRestock then
         return
     end
+
 
     BlinkRestockDot()
 
@@ -1724,9 +1827,6 @@ end)
 ApplySpeed()
 
 task.spawn(function()
-
-    -- GUI + dropdown headers already exist.
-    -- JSON is fetched afterward.
 
     local loaded =
         LoadShopJson()
