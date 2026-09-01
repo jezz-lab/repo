@@ -1,4 +1,4 @@
-farm a fish
+--farm a fish
 
 --==================================================
 -- SHOP RESTOCK AUTO BUY GUI
