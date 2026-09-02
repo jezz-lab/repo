@@ -15,7 +15,7 @@ if not player then
 end
 
 -- ========== CONFIGURATION ==========
-local TARGET_GAME_ID = 96645548064314 -- Set to specific GameId to restrict.or nil for every game.
+local TARGET_GAME_ID = nil -- Set to specific GameId to restrict.or nil for every game.
 
 -- Startup message
 print("[AUTO BREW] Script is running...")
