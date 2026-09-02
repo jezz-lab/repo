@@ -1,7 +1,7 @@
 --catch and tame : potion only
 
 --[[
-    Auto Brew & Claim – Full GUI with auto‑disappearing status panel
+    Auto Brew & Claim – with cash parser for "$100M" etc.
 ]]
 
 local Players = game:GetService("Players")
@@ -55,7 +55,7 @@ local function createStatusPanel(text, isError, autoDisappearDelay)
     closeBtn.Font = Enum.Font.GothamBold
     closeBtn.Parent = frame
 
-    -- Drag
+    -- Drag for status panel
     local function makeDraggable(obj)
         local dragging, dragInput, dragStart, startPos
         obj.InputBegan:Connect(function(input)
@@ -130,6 +130,7 @@ local TIER_DATA = {
 }
 
 local function formatCash(amount)
+    if amount >= 1000000000 then return string.format("%.1fB", amount/1000000000) end
     if amount >= 1000000 then return string.format("%.1fM", amount/1000000) end
     if amount >= 1000 then return string.format("%.1fK", amount/1000) end
     return tostring(amount)
@@ -167,17 +168,67 @@ local function getClaimPotionEvent()
     return nil
 end
 
+-- ========== CASH PARSER (handles "$100M", "$1.5B", etc.) ==========
+
+local function parseCashString(str)
+    if type(str) ~= "string" then return tonumber(str) or 0 end
+    -- Remove leading/trailing spaces, $, commas
+    local clean = str:gsub("[%$,%s]", "")
+    -- Find suffix (K, M, B) at end
+    local suffix = clean:match("([KMB])$")
+    local numPart = clean:gsub("[KMB]$", "")
+    local num = tonumber(numPart)
+    if not num then return 0 end
+    if suffix == "K" then return num * 1000 end
+    if suffix == "M" then return num * 1000000 end
+    if suffix == "B" then return num * 1000000000 end
+    return num
+end
+
+-- ========== IMPROVED CASH FETCHER ==========
+
 local function getPlayerCash()
     local leaderstats = player:FindFirstChild("leaderstats")
-    if leaderstats then
-        local cashValue = leaderstats:FindFirstChild("Cash")
-        if cashValue and cashValue:IsA("StringValue") then
-            local cleaned = string.gsub(cashValue.Value, "[,%s]", "")
-            return tonumber(cleaned) or 0
+    if not leaderstats then
+        print("[DEBUG] leaderstats not found.")
+        return 0
+    end
+
+    -- Try common cash names
+    local cashNames = {"Cash", "Money", "Coins", "Gold"}
+    for _, name in ipairs(cashNames) do
+        local valueObj = leaderstats:FindFirstChild(name)
+        if valueObj then
+            if valueObj:IsA("StringValue") then
+                local parsed = parseCashString(valueObj.Value)
+                if parsed > 0 then
+                    print("[DEBUG] Cash parsed from StringValue: " .. name .. " = " .. parsed)
+                    return parsed
+                end
+            elseif valueObj:IsA("NumberValue") or valueObj:IsA("IntValue") then
+                print("[DEBUG] Cash found as NumberValue: " .. name .. " = " .. valueObj.Value)
+                return valueObj.Value
+            else
+                -- Try to convert .Value to number anyway
+                local num = tonumber(valueObj.Value)
+                if num then
+                    print("[DEBUG] Cash found (converted): " .. name .. " = " .. num)
+                    return num
+                end
+            end
         end
     end
+
+    -- If nothing found, print all leaderstats children for debug
+    print("[DEBUG] No cash object found. leaderstats children:")
+    for _, child in ipairs(leaderstats:GetChildren()) do
+        print("  " .. child.Name .. " (" .. child.ClassName .. ") = " .. tostring(child.Value))
+    end
+
     return 0
 end
+
+-- ========== POTION COUNT ==========
 
 local function getPotionCount(potionName)
     local backpack = player:FindFirstChild("Backpack")
@@ -567,8 +618,61 @@ local playerGui = player:WaitForChild("PlayerGui")
 gui.ToggleScreen.Parent = playerGui
 gui.ScreenGui.Parent = playerGui
 
--- ========== DRAG ==========
+-- ========== DRAG FUNCTIONS ==========
 
+-- Generic draggable function with threshold to avoid click interference
+local function makeDraggableWithThreshold(obj, clickCallback)
+    local isDragging = false
+    local pressPos = nil
+    local startPos = nil
+    local threshold = 10  -- pixels
+
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            pressPos = input.Position
+            startPos = obj.Position
+            isDragging = false
+        end
+    end)
+
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if pressPos then
+                local delta = input.Position - pressPos
+                if delta.Magnitude > threshold then
+                    isDragging = true
+                    local newPos = UDim2.new(
+                        startPos.X.Scale,
+                        startPos.X.Offset + delta.X,
+                        startPos.Y.Scale,
+                        startPos.Y.Offset + delta.Y
+                    )
+                    obj.Position = newPos
+                end
+            end
+        end
+    end)
+
+    obj.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not isDragging and clickCallback then
+                clickCallback()
+            end
+            pressPos = nil
+            startPos = nil
+            isDragging = false
+        end
+    end)
+end
+
+-- Make the flask icon draggable (click toggles GUI only if not dragged)
+local guiVisible = false
+makeDraggableWithThreshold(gui.ToggleButton, function()
+    guiVisible = not guiVisible
+    gui.ScreenGui.Enabled = guiVisible
+end)
+
+-- Make the main GUI draggable (simple drag without click conflict)
 local function makeDraggable(obj)
     local dragging, dragInput, dragStart, startPos
     obj.InputBegan:Connect(function(input)
@@ -601,16 +705,9 @@ local function makeDraggable(obj)
     end)
 end
 
-makeDraggable(gui.ToggleFrame)
 makeDraggable(gui.MainFrame)
 
 -- ========== UI EVENTS ==========
-
-local guiVisible = false
-gui.ToggleButton.MouseButton1Click:Connect(function()
-    guiVisible = not guiVisible
-    gui.ScreenGui.Enabled = guiVisible
-end)
 
 -- Potion radios
 for name, data in pairs(gui.PotionRadios) do
@@ -887,4 +984,4 @@ else
     warn("[AUTO BREW] ClaimPotion event NOT found – auto brewing may fail.")
 end
 
-print("[AUTO BREW] Ready. Click the ⚗️ flask icon to open the main GUI.")
+print("[AUTO BREW] Ready. Drag the ⚗️ flask icon to move it; click to open the main GUI.")
