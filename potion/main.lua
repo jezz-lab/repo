@@ -1,7 +1,19 @@
 --catch and tame : potion only
-
 --[[
     Auto Brew & Claim GUI
+    Compatible with: Git, Delta, and any Roblox executor.
+
+    DEBUG VERSION
+    Debugging focuses on:
+    - Potion/item names in Backpack
+    - Amount attributes
+    - Cash detection
+    - ClaimPotion class/path confirmation
+    - Detecting possible separate brew/start remotes
+
+    NOT debugging:
+    - ClaimPotion return-value format
+    - Knit version/path
 ]]
 
 local Players = game:GetService("Players")
@@ -15,7 +27,7 @@ if not player then
 end
 
 -- ========== CONFIGURATION ==========
-local TARGET_GAME_ID = nil -- Set to specific GameId to restrict.or nil for every game.
+local TARGET_GAME_ID = nil -- Set to specific GameId to restrict
 
 -- Startup message
 print("[AUTO BREW] Script is running...")
