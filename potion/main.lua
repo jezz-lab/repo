@@ -1,15 +1,24 @@
 --catch and tame : potion only
 
---[[
-    Auto Brew & Claim GUI
-]]
+--[[    Auto Brew & Claim GUI    ]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- ========== CONFIGURATION ==========
-local TARGET_GAME_ID = 96645548064314 -- put gameID for specific game, or nil for every game
+local TARGET_GAME_ID = 96645548064314 -- Set to specific GameId if you want to restrict.or nil for every game
+
+-- Startup message
+print("[AUTO BREW] Script is running...")
+
+-- ========== GAME ID CHECK ==========
+if TARGET_GAME_ID and game.GameId ~= TARGET_GAME_ID then
+    warn("[AUTO BREW] Wrong game! (ID: " .. game.GameId .. "). Exiting.")
+    return
+end
+
+-- ========== REST OF SCRIPT ==========
 
 local TIER_DATA = {
     ["Tier 2"] = { time = 300, cash = 100000 },
@@ -30,13 +39,6 @@ local function debugWarn(...)
     warn("[AUTO BREW DEBUG]", ...)
 end
 
--- ========== GAME ID CHECK ==========
-
-if TARGET_GAME_ID and game.GameId ~= TARGET_GAME_ID then
-    warn("This script is not intended for this game (ID: " .. game.GameId .. "). Exiting.")
-    return
-end
-
 debugPrint("Game ID:", game.GameId)
 debugPrint("Place ID:", game.PlaceId)
 debugPrint("Player:", player.Name)
@@ -45,25 +47,18 @@ debugPrint("Player:", player.Name)
 
 local function getClaimPotionEvent()
     local packages = ReplicatedStorage:FindFirstChild("Packages")
-
     if packages then
         local index = packages:FindFirstChild("_Index")
-
         if index then
             local knitFolder = index:FindFirstChild('sleitnick_knit@1.7.0')
-
             if knitFolder then
                 local knit = knitFolder:FindFirstChild("knit")
-
                 if knit then
                     local services = knit:FindFirstChild("Services")
-
                     if services then
                         local potionService = services:FindFirstChild("PotionCauldronService")
-
                         if potionService then
                             local rf = potionService:FindFirstChild("RF")
-
                             if rf then
                                 return rf:FindFirstChild("ClaimPotion")
                             end
@@ -73,198 +68,112 @@ local function getClaimPotionEvent()
             end
         end
     end
-
     return nil
 end
 
--- ========== DEBUG: INVENTORY ==========
+-- ========== DEBUG FUNCTIONS ==========
 
 local function debugInventory()
     debugPrint("========== INVENTORY DEBUG ==========")
-
     local backpack = player:FindFirstChild("Backpack")
-
     if not backpack then
         debugWarn("Backpack NOT FOUND")
         return
     end
-
     debugPrint("Backpack found:", backpack:GetFullName())
-
     local children = backpack:GetChildren()
-
     if #children == 0 then
         debugWarn("Backpack is empty")
         return
     end
-
     for _, obj in ipairs(children) do
         local amount = obj:GetAttribute("Amount")
-
-        debugPrint(
-            "Backpack item:",
-            obj.Name,
-            "| Class:",
-            obj.ClassName,
-            "| Amount:",
-            tostring(amount)
-        )
-
-        -- Print all attributes on the object
+        debugPrint("Backpack item:", obj.Name, "| Class:", obj.ClassName, "| Amount:", tostring(amount))
         local attributes = obj:GetAttributes()
-
         for attributeName, attributeValue in pairs(attributes) do
-            debugPrint(
-                "   Attribute:",
-                attributeName,
-                "=",
-                tostring(attributeValue)
-            )
+            debugPrint("   Attribute:", attributeName, "=", tostring(attributeValue))
         end
     end
-
     debugPrint("========== END INVENTORY DEBUG ==========")
 end
 
--- ========== DEBUG: CASH ==========
-
 local function debugCash()
     debugPrint("========== CASH DEBUG ==========")
-
     local leaderstats = player:FindFirstChild("leaderstats")
-
     if not leaderstats then
         debugWarn("leaderstats NOT FOUND")
         return
     end
-
     debugPrint("leaderstats found")
-
     for _, obj in ipairs(leaderstats:GetChildren()) do
-        debugPrint(
-            "leaderstats item:",
-            obj.Name,
-            "| Class:",
-            obj.ClassName,
-            "| Value:",
-            tostring(obj.Value)
-        )
+        debugPrint("leaderstats item:", obj.Name, "| Class:", obj.ClassName, "| Value:", tostring(obj.Value))
     end
-
     local cashValue = leaderstats:FindFirstChild("Cash")
-
     if not cashValue then
         debugWarn("Cash object NOT FOUND")
     else
-        debugPrint(
-            "Cash found:",
-            cashValue:GetFullName(),
-            "| Class:",
-            cashValue.ClassName,
-            "| Value:",
-            tostring(cashValue.Value)
-        )
+        debugPrint("Cash found:", cashValue:GetFullName(), "| Class:", cashValue.ClassName, "| Value:", tostring(cashValue.Value))
     end
-
     debugPrint("========== END CASH DEBUG ==========")
 end
 
--- ========== DEBUG: REMOTE ==========
-
 local function debugClaimRemote()
     debugPrint("========== CLAIM REMOTE DEBUG ==========")
-
     local claimRemote = getClaimPotionEvent()
-
     if not claimRemote then
         debugWarn("ClaimPotion NOT FOUND")
         return
     end
-
     debugPrint("ClaimPotion found:", claimRemote:GetFullName())
     debugPrint("ClaimPotion class:", claimRemote.ClassName)
-
     local parent = claimRemote.Parent
-
     if parent then
         debugPrint("ClaimPotion parent:", parent:GetFullName())
-
         for _, obj in ipairs(parent:GetChildren()) do
-            debugPrint(
-                "Remote sibling:",
-                obj.Name,
-                "| Class:",
-                obj.ClassName
-            )
+            debugPrint("Remote sibling:", obj.Name, "| Class:", obj.ClassName)
         end
     end
-
     debugPrint("========== END CLAIM REMOTE DEBUG ==========")
 end
 
--- ========== DEBUG: POSSIBLE BREW REMOTES ==========
-
 local function debugPotionService()
     debugPrint("========== POTION SERVICE DEBUG ==========")
-
     local packages = ReplicatedStorage:FindFirstChild("Packages")
-
     if not packages then
         debugWarn("Packages not found")
         return
     end
-
     local index = packages:FindFirstChild("_Index")
-
     if not index then
         debugWarn("_Index not found")
         return
     end
-
     local knitFolder = index:FindFirstChild('sleitnick_knit@1.7.0')
-
     if not knitFolder then
         debugWarn("Knit folder not found")
         return
     end
-
     local knit = knitFolder:FindFirstChild("knit")
-
     if not knit then
         debugWarn("knit folder not found")
         return
     end
-
     local services = knit:FindFirstChild("Services")
-
     if not services then
         debugWarn("Services folder not found")
         return
     end
-
     local potionService = services:FindFirstChild("PotionCauldronService")
-
     if not potionService then
         debugWarn("PotionCauldronService NOT FOUND")
         return
     end
-
-    debugPrint(
-        "PotionCauldronService:",
-        potionService:GetFullName()
-    )
-
+    debugPrint("PotionCauldronService:", potionService:GetFullName())
     for _, obj in ipairs(potionService:GetDescendants()) do
         if obj:IsA("RemoteFunction") or obj:IsA("RemoteEvent") then
-            debugPrint(
-                "Potion service remote:",
-                obj:GetFullName(),
-                "| Class:",
-                obj.ClassName
-            )
+            debugPrint("Potion service remote:", obj:GetFullName(), "| Class:", obj.ClassName)
         end
     end
-
     debugPrint("========== END POTION SERVICE DEBUG ==========")
 end
 
@@ -272,34 +181,26 @@ end
 
 local function getPlayerCash()
     local leaderstats = player:FindFirstChild("leaderstats")
-
     if leaderstats then
         local cashValue = leaderstats:FindFirstChild("Cash")
-
         if cashValue and cashValue:IsA("StringValue") then
             local cleaned = string.gsub(cashValue.Value, "[,%s]", "")
             return tonumber(cleaned) or 0
         end
     end
-
     return 0
 end
 
 local function getPotionCount(potionName)
     local backpack = player:FindFirstChild("Backpack")
-
     if not backpack then
         return 0
     end
-
     local potionItem = backpack:FindFirstChild(potionName)
-
     if not potionItem then
         return 0
     end
-
     local amount = potionItem:GetAttribute("Amount")
-
     return tonumber(amount) or 0
 end
 
@@ -309,18 +210,15 @@ local function formatCash(amount)
     if amount >= 1000000 then
         return string.format("%.1fM", amount / 1000000)
     end
-
     if amount >= 1000 then
         return string.format("%.1fK", amount / 1000)
     end
-
     return tostring(amount)
 end
 
 local function formatTime(seconds)
     local m = math.floor(seconds / 60)
     local s = math.floor(seconds % 60)
-
     return string.format("%d:%02d", m, s)
 end
 
@@ -369,9 +267,25 @@ local function createGUI()
     mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
     mainFrame.Parent = screenGui
 
+    -- NEW: X button (close/terminate)
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 24, 0, 24)
+    closeButton.Position = UDim2.new(1, -28, 0, 4) -- top right corner
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeButton.BackgroundTransparency = 0.3
+    closeButton.BorderSizePixel = 1
+    closeButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Text = "✕"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = mainFrame
+
     -- Title
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundTransparency = 1
     title.Text = "⚗️ Auto Brew & Claim"
     title.TextColor3 = Color3.fromRGB(255,255,255)
@@ -694,6 +608,7 @@ local function createGUI()
         ToggleFrame = toggleFrame,
         ScreenGui = screenGui,
         MainFrame = mainFrame,
+        CloseButton = closeButton,      -- NEW
         EnableCheckbox = enableCheckbox,
         EnableCheckmark = enableCheckmark,
         CountBox = countBox,
@@ -724,12 +639,10 @@ local targetCount = 0
 debugPrint("========================================")
 debugPrint("INITIAL DEBUG SCAN")
 debugPrint("========================================")
-
 debugCash()
 debugInventory()
 debugClaimRemote()
 debugPotionService()
-
 debugPrint("========================================")
 debugPrint("END INITIAL DEBUG SCAN")
 debugPrint("========================================")
@@ -753,7 +666,6 @@ local function getSelectedPotion()
             return name
         end
     end
-
     return nil
 end
 
@@ -763,222 +675,104 @@ local function getSelectedTier()
             return name
         end
     end
-
     return nil
 end
 
 local function updatePotionCountDisplay()
-
     local potion = getSelectedPotion()
     local tier = getSelectedTier()
     local label = gui.PotionCountLabel
 
     if potion and tier then
-
         local name = potion .. " " .. tier
         local count = getPotionCount(name)
-
-        label.Text = string.format(
-            "🧪 %s: %d/3 req.",
-            name,
-            count
-        )
-
-        label.TextColor3 =
-            count >= 3
-            and Color3.fromRGB(100,255,100)
-            or Color3.fromRGB(255,100,100)
-
-        debugPrint(
-            "Potion check:",
-            name,
-            "| Count:",
-            count
-        )
-
+        label.Text = string.format("🧪 %s: %d/3 req.", name, count)
+        label.TextColor3 = count >= 3 and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
+        debugPrint("Potion check:", name, "| Count:", count)
     else
-
         label.Text = "🧪 Select a potion and tier"
         label.TextColor3 = Color3.fromRGB(150,200,255)
-
     end
 end
 
 local function updateLowerTierDisplay()
-
     local potion = getSelectedPotion()
     local tier = getSelectedTier()
     local label = gui.LowerTierLabel
 
     if potion and tier then
-
-        local lowerTier =
-            (tier == "Tier 2")
-            and "Tier 1"
-            or (tier == "Tier 3" and "Tier 2" or nil)
-
+        local lowerTier = (tier == "Tier 2") and "Tier 1" or (tier == "Tier 3" and "Tier 2" or nil)
         if lowerTier then
-
             local lowerName = potion .. " " .. lowerTier
             local count = getPotionCount(lowerName)
-
-            label.Text = string.format(
-                "🔽 %s available: %d",
-                lowerName,
-                count
-            )
-
-            label.TextColor3 =
-                Color3.fromRGB(200,200,255)
-
-            debugPrint(
-                "Lower-tier check:",
-                lowerName,
-                "| Count:",
-                count
-            )
-
+            label.Text = string.format("🔽 %s available: %d", lowerName, count)
+            label.TextColor3 = Color3.fromRGB(200,200,255)
+            debugPrint("Lower-tier check:", lowerName, "| Count:", count)
         else
-
             label.Text = "🔽 Select a valid tier"
             label.TextColor3 = Color3.fromRGB(150,150,200)
-
         end
-
     else
-
         label.Text = "🔽 Select potion & tier"
         label.TextColor3 = Color3.fromRGB(150,150,200)
-
     end
 end
 
 local function updateCashDisplay()
-
     local cash = getPlayerCash()
-
-    gui.CashLabel.Text =
-        "💰 Cash: " .. formatCash(cash)
-
-    debugPrint(
-        "Cash read:",
-        cash
-    )
+    gui.CashLabel.Text = "💰 Cash: " .. formatCash(cash)
+    debugPrint("Cash read:", cash)
 end
 
 local function updateTimerDisplay(elapsed, total)
-
-    gui.TimerLabel.Text =
-        string.format(
-            "⏱️ Brewing: %s / %s",
-            formatTime(elapsed),
-            formatTime(total)
-        )
-
+    gui.TimerLabel.Text = string.format("⏱️ Brewing: %s / %s", formatTime(elapsed), formatTime(total))
     local progress = elapsed / total
-
     if progress >= 1 then
-
-        gui.TimerLabel.TextColor3 =
-            Color3.fromRGB(100,255,100)
-
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(100,255,100)
     elseif progress >= 0.7 then
-
-        gui.TimerLabel.TextColor3 =
-            Color3.fromRGB(255,255,100)
-
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(255,255,100)
     elseif progress >= 0.3 then
-
-        gui.TimerLabel.TextColor3 =
-            Color3.fromRGB(255,200,50)
-
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(255,200,50)
     else
-
-        gui.TimerLabel.TextColor3 =
-            Color3.fromRGB(255,150,50)
-
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(255,150,50)
     end
 end
 
 local function setStatus(text, color)
-
     gui.StatusLine.Text = text
     gui.StatusLine.TextColor3 = color
-
 end
 
 -- ========== CLAIM FUNCTION ==========
 
 local function claimPotion(potionName)
-
     if not claimPotionEvent then
         return false, "Event not found"
     end
-
-    -- DEBUG ONLY:
-    -- We are NOT changing the existing invocation here.
-    debugPrint(
-        "Claim requested for:",
-        potionName
-    )
-
-    debugPrint(
-        "Claim remote:",
-        claimPotionEvent:GetFullName()
-    )
-
-    debugPrint(
-        "Claim remote class:",
-        claimPotionEvent.ClassName
-    )
+    debugPrint("Claim requested for:", potionName)
+    debugPrint("Claim remote:", claimPotionEvent:GetFullName())
+    debugPrint("Claim remote class:", claimPotionEvent.ClassName)
 
     local ok, result = pcall(function()
-
         if claimPotionEvent:IsA("RemoteFunction") then
-
-            debugPrint(
-                "Invoking ClaimPotion RemoteFunction for:",
-                potionName
-            )
-
+            debugPrint("Invoking ClaimPotion RemoteFunction for:", potionName)
             return claimPotionEvent:InvokeServer()
-
         elseif claimPotionEvent:IsA("RemoteEvent") then
-
-            debugPrint(
-                "Firing ClaimPotion RemoteEvent for:",
-                potionName
-            )
-
+            debugPrint("Firing ClaimPotion RemoteEvent for:", potionName)
             claimPotionEvent:FireServer()
-
             return true
-
         else
-
-            debugWarn(
-                "ClaimPotion has unexpected class:",
-                claimPotionEvent.ClassName
-            )
-
+            debugWarn("ClaimPotion has unexpected class:", claimPotionEvent.ClassName)
             return nil
         end
     end)
 
     if not ok then
-
-        debugWarn(
-            "ClaimPotion call errored:",
-            tostring(result)
-        )
-
+        debugWarn("ClaimPotion call errored:", tostring(result))
         return false, "Error"
     end
 
-    if type(result) == "table"
-        and #result >= 2
-        and result[2] == "Not finished" then
-
+    if type(result) == "table" and #result >= 2 and result[2] == "Not finished" then
         return false, "Not finished"
     end
 
@@ -992,13 +786,10 @@ end
 -- ========== MAIN AUTO LOOP ==========
 
 local function autoLoop()
-
     brewedCount = 0
-
     debugPrint("AUTO LOOP STARTED")
 
     while autoEnabled do
-
         local potion = getSelectedPotion()
         local tier = getSelectedTier()
 
@@ -1006,69 +797,29 @@ local function autoLoop()
         updatePotionCountDisplay()
         updateLowerTierDisplay()
 
-        -- Read target count
-        local countText =
-            gui.CountBox.Text:match("%d+")
-            or "0"
+        local countText = gui.CountBox.Text:match("%d+") or "0"
+        targetCount = tonumber(countText) or 0
 
-        targetCount =
-            tonumber(countText)
-            or 0
+        debugPrint("Loop state:", "Potion =", tostring(potion), "Tier =", tostring(tier), "Target =", targetCount, "Brewed =", brewedCount)
 
-        debugPrint(
-            "Loop state:",
-            "Potion =", tostring(potion),
-            "Tier =", tostring(tier),
-            "Target =", targetCount,
-            "Brewed =", brewedCount
-        )
-
-        if targetCount > 0
-            and brewedCount >= targetCount then
-
-            setStatus(
-                string.format(
-                    "✅ Done! Brewed %d %s %s",
-                    brewedCount,
-                    potion or "",
-                    tier or ""
-                ),
-                Color3.fromRGB(100,255,100)
-            )
-
+        if targetCount > 0 and brewedCount >= targetCount then
+            setStatus(string.format("✅ Done! Brewed %d %s %s", brewedCount, potion or "", tier or ""), Color3.fromRGB(100,255,100))
             autoEnabled = false
             gui.EnableCheckmark.Visible = false
-            gui.EnableCheckbox.BackgroundColor3 =
-                Color3.fromRGB(60,60,80)
-
+            gui.EnableCheckbox.BackgroundColor3 = Color3.fromRGB(60,60,80)
             gui.TimerLabel.Text = "⏱️ Finished"
-            gui.TimerLabel.TextColor3 =
-                Color3.fromRGB(100,255,100)
-
+            gui.TimerLabel.TextColor3 = Color3.fromRGB(100,255,100)
             break
         end
 
         if potion and tier and claimPotionEvent then
+            local potionName = potion .. " " .. tier
+            local data = TIER_DATA[tier]
+            local requiredCash = data.cash
+            local brewTime = data.time
+            local potionCount = getPotionCount(potionName)
+            local currentCash = getPlayerCash()
 
-            local potionName =
-                potion .. " " .. tier
-
-            local data =
-                TIER_DATA[tier]
-
-            local requiredCash =
-                data.cash
-
-            local brewTime =
-                data.time
-
-            local potionCount =
-                getPotionCount(potionName)
-
-            local currentCash =
-                getPlayerCash()
-
-            -- DEBUG
             debugPrint("----------------------------------------")
             debugPrint("BREW CHECK")
             debugPrint("Potion:", potionName)
@@ -1079,318 +830,108 @@ local function autoLoop()
             debugPrint("Brew duration:", brewTime)
 
             if potionCount < 3 then
-
-                debugWarn(
-                    "Insufficient potion:",
-                    potionName,
-                    "| Have:",
-                    potionCount,
-                    "| Need: 3"
-                )
-
-                setStatus(
-                    string.format(
-                        "❌ Need 3 %s (have %d)",
-                        potionName,
-                        potionCount
-                    ),
-                    Color3.fromRGB(255,100,100)
-                )
-
-                gui.TimerLabel.Text =
-                    "⏱️ Insufficient Potions!"
-
-                gui.TimerLabel.TextColor3 =
-                    Color3.fromRGB(255,100,100)
-
+                debugWarn("Insufficient potion:", potionName, "| Have:", potionCount, "| Need: 3")
+                setStatus(string.format("❌ Need 3 %s (have %d)", potionName, potionCount), Color3.fromRGB(255,100,100))
+                gui.TimerLabel.Text = "⏱️ Insufficient Potions!"
+                gui.TimerLabel.TextColor3 = Color3.fromRGB(255,100,100)
                 wait(5)
                 continue
             end
 
             if currentCash < requiredCash then
-
-                debugWarn(
-                    "Insufficient cash:",
-                    currentCash,
-                    "| Need:",
-                    requiredCash
-                )
-
-                setStatus(
-                    string.format(
-                        "❌ Need %s cash (have %s)",
-                        formatCash(requiredCash),
-                        formatCash(currentCash)
-                    ),
-                    Color3.fromRGB(255,100,100)
-                )
-
-                gui.TimerLabel.Text =
-                    "⏱️ Insufficient Cash!"
-
-                gui.TimerLabel.TextColor3 =
-                    Color3.fromRGB(255,100,100)
-
+                debugWarn("Insufficient cash:", currentCash, "| Need:", requiredCash)
+                setStatus(string.format("❌ Need %s cash (have %s)", formatCash(requiredCash), formatCash(currentCash)), Color3.fromRGB(255,100,100))
+                gui.TimerLabel.Text = "⏱️ Insufficient Cash!"
+                gui.TimerLabel.TextColor3 = Color3.fromRGB(255,100,100)
                 wait(5)
                 continue
             end
 
-            -- Start brewing
-            debugPrint(
-                "Requirements passed for:",
-                potionName
-            )
-
-            debugPrint(
-                "Beginning local brew timer."
-            )
+            debugPrint("Requirements passed for:", potionName)
+            debugPrint("Beginning local brew timer.")
 
             isBrewing = true
             brewStartTime = tick()
             brewDuration = brewTime
 
-            setStatus(
-                string.format(
-                    "🔄 Brewing %s... (%d/%s)",
-                    potionName,
-                    brewedCount,
-                    targetCount == 0
-                        and "∞"
-                        or targetCount
-                ),
-                Color3.fromRGB(255,200,50)
-            )
+            setStatus(string.format("🔄 Brewing %s... (%d/%s)", potionName, brewedCount, targetCount == 0 and "∞" or targetCount), Color3.fromRGB(255,200,50))
 
             while isBrewing and autoEnabled do
-
-                local elapsed =
-                    tick() - brewStartTime
-
-                local remaining =
-                    brewDuration - elapsed
+                local elapsed = tick() - brewStartTime
+                local remaining = brewDuration - elapsed
 
                 if remaining <= 0 then
-
                     isBrewing = false
-
-                    gui.TimerLabel.Text =
-                        string.format(
-                            "✅ Brewing: %s / %s - READY!",
-                            formatTime(brewDuration),
-                            formatTime(brewDuration)
-                        )
-
-                    gui.TimerLabel.TextColor3 =
-                        Color3.fromRGB(100,255,100)
-
-                    debugPrint(
-                        "Local brew timer finished:",
-                        potionName
-                    )
+                    gui.TimerLabel.Text = string.format("✅ Brewing: %s / %s - READY!", formatTime(brewDuration), formatTime(brewDuration))
+                    gui.TimerLabel.TextColor3 = Color3.fromRGB(100,255,100)
+                    debugPrint("Local brew timer finished:", potionName)
 
                     local attempts = 0
                     local maxAttempts = 10
                     local claimed = false
 
-                    while not claimed
-                        and attempts < maxAttempts do
-
+                    while not claimed and attempts < maxAttempts do
                         attempts = attempts + 1
+                        setStatus(string.format("⏳ Claiming %s (attempt %d)", potionName, attempts), Color3.fromRGB(255,200,50))
+                        debugPrint("Claim attempt:", attempts, "/", maxAttempts, "| Potion:", potionName)
 
-                        setStatus(
-                            string.format(
-                                "⏳ Claiming %s (attempt %d)",
-                                potionName,
-                                attempts
-                            ),
-                            Color3.fromRGB(255,200,50)
-                        )
-
-                        debugPrint(
-                            "Claim attempt:",
-                            attempts,
-                            "/",
-                            maxAttempts,
-                            "| Potion:",
-                            potionName
-                        )
-
-                        local success, statusOrResult =
-                            claimPotion(potionName)
+                        local success, statusOrResult = claimPotion(potionName)
 
                         if success then
-
                             claimed = true
-                            brewedCount =
-                                brewedCount + 1
-
-                            setStatus(
-                                string.format(
-                                    "✅ Claimed %s! (%d/%s)",
-                                    potionName,
-                                    brewedCount,
-                                    targetCount == 0
-                                        and "∞"
-                                        or targetCount
-                                ),
-                                Color3.fromRGB(100,255,100)
-                            )
-
-                            gui.TimerLabel.Text =
-                                "✅ Brewed & Claimed: "
-                                .. potionName
-
-                            gui.TimerLabel.TextColor3 =
-                                Color3.fromRGB(100,255,100)
-
+                            brewedCount = brewedCount + 1
+                            setStatus(string.format("✅ Claimed %s! (%d/%s)", potionName, brewedCount, targetCount == 0 and "∞" or targetCount), Color3.fromRGB(100,255,100))
+                            gui.TimerLabel.Text = "✅ Brewed & Claimed: " .. potionName
+                            gui.TimerLabel.TextColor3 = Color3.fromRGB(100,255,100)
                             updateCashDisplay()
                             updatePotionCountDisplay()
                             updateLowerTierDisplay()
-
-                            debugPrint(
-                                "Claim reported success:",
-                                potionName
-                            )
-
+                            debugPrint("Claim reported success:", potionName)
                             break
-
                         elseif statusOrResult == "Not finished" then
-
-                            setStatus(
-                                string.format(
-                                    "⏳ Not ready, retry %d/%d in 5s",
-                                    attempts,
-                                    maxAttempts
-                                ),
-                                Color3.fromRGB(255,200,50)
-                            )
-
-                            gui.TimerLabel.Text =
-                                "⏳ Waiting for potion..."
-
-                            gui.TimerLabel.TextColor3 =
-                                Color3.fromRGB(255,200,50)
-
+                            setStatus(string.format("⏳ Not ready, retry %d/%d in 5s", attempts, maxAttempts), Color3.fromRGB(255,200,50))
+                            gui.TimerLabel.Text = "⏳ Waiting for potion..."
+                            gui.TimerLabel.TextColor3 = Color3.fromRGB(255,200,50)
                             wait(5)
-
                         else
-
-                            debugWarn(
-                                "Claim failed for:",
-                                potionName,
-                                "| Status:",
-                                tostring(statusOrResult)
-                            )
-
-                            setStatus(
-                                string.format(
-                                    "❌ Claim failed: %s",
-                                    potionName
-                                ),
-                                Color3.fromRGB(255,100,100)
-                            )
-
-                            gui.TimerLabel.Text =
-                                "❌ Claim failed"
-
-                            gui.TimerLabel.TextColor3 =
-                                Color3.fromRGB(255,100,100)
-
+                            debugWarn("Claim failed for:", potionName, "| Status:", tostring(statusOrResult))
+                            setStatus(string.format("❌ Claim failed: %s", potionName), Color3.fromRGB(255,100,100))
+                            gui.TimerLabel.Text = "❌ Claim failed"
+                            gui.TimerLabel.TextColor3 = Color3.fromRGB(255,100,100)
                             break
                         end
                     end
 
                     if not claimed then
-
-                        debugWarn(
-                            "All claim attempts exhausted:",
-                            potionName
-                        )
-
-                        setStatus(
-                            string.format(
-                                "⚠️ Claim attempts exhausted for %s",
-                                potionName
-                            ),
-                            Color3.fromRGB(255,200,50)
-                        )
+                        debugWarn("All claim attempts exhausted:", potionName)
+                        setStatus(string.format("⚠️ Claim attempts exhausted for %s", potionName), Color3.fromRGB(255,200,50))
                     end
-
                     break
-
                 else
-
-                    updateTimerDisplay(
-                        elapsed,
-                        brewDuration
-                    )
-
-                    local timeLeft =
-                        formatTime(remaining)
-
-                    setStatus(
-                        string.format(
-                            "⏳ Brewing %s (%s left) 💰%s | 🧪 %d/3",
-                            potionName,
-                            timeLeft,
-                            formatCash(requiredCash),
-                            potionCount
-                        ),
-                        Color3.fromRGB(255,200,50)
-                    )
-
+                    updateTimerDisplay(elapsed, brewDuration)
+                    local timeLeft = formatTime(remaining)
+                    setStatus(string.format("⏳ Brewing %s (%s left) 💰%s | 🧪 %d/3", potionName, timeLeft, formatCash(requiredCash), potionCount), Color3.fromRGB(255,200,50))
                     wait(1)
                 end
             end
 
             if not autoEnabled then
-
                 isBrewing = false
-
-                debugPrint(
-                    "Auto loop stopped while brewing."
-                )
-
+                debugPrint("Auto loop stopped while brewing.")
                 break
             end
-
         else
-
             if not potion and not tier then
-
-                setStatus(
-                    "⚠️ Select a potion and tier",
-                    Color3.fromRGB(255,200,50)
-                )
-
+                setStatus("⚠️ Select a potion and tier", Color3.fromRGB(255,200,50))
             elseif not potion then
-
-                setStatus(
-                    "⚠️ Select a potion type",
-                    Color3.fromRGB(255,200,50)
-                )
-
+                setStatus("⚠️ Select a potion type", Color3.fromRGB(255,200,50))
             elseif not tier then
-
-                setStatus(
-                    "⚠️ Select a tier",
-                    Color3.fromRGB(255,200,50)
-                )
-
+                setStatus("⚠️ Select a tier", Color3.fromRGB(255,200,50))
             else
-
-                setStatus(
-                    "⚠️ No ClaimPotion event found",
-                    Color3.fromRGB(255,100,100)
-                )
+                setStatus("⚠️ No ClaimPotion event found", Color3.fromRGB(255,100,100))
             end
-
-            gui.TimerLabel.Text =
-                "⏱️ Brewing: 0:00 / 0:00"
-
-            gui.TimerLabel.TextColor3 =
-                Color3.fromRGB(200,200,200)
-
+            gui.TimerLabel.Text = "⏱️ Brewing: 0:00 / 0:00"
+            gui.TimerLabel.TextColor3 = Color3.fromRGB(200,200,200)
             wait(2)
         end
     end
@@ -1407,107 +948,46 @@ end
 local guiVisible = false
 
 gui.ToggleFrame.MouseButton1Click:Connect(function()
-
     guiVisible = not guiVisible
     gui.ScreenGui.Enabled = guiVisible
-
-    debugPrint(
-        "GUI visibility:",
-        guiVisible
-    )
+    debugPrint("GUI visibility:", guiVisible)
 end)
 
 -- Radio buttons
-
 for name, data in pairs(gui.PotionRadios) do
-
     data.radio.MouseButton1Click:Connect(function()
-
         clearRadios(gui.PotionRadios)
-
         data.circle.Visible = true
-
-        debugPrint(
-            "Selected potion:",
-            name
-        )
-
+        debugPrint("Selected potion:", name)
         updatePotionCountDisplay()
         updateLowerTierDisplay()
-
         local potion = getSelectedPotion()
         local tier = getSelectedTier()
-
         if potion and tier then
-
-            debugPrint(
-                "Selected combination:",
-                potion .. " " .. tier
-            )
-
-            setStatus(
-                string.format(
-                    "Selected: %s %s",
-                    potion,
-                    tier
-                ),
-                Color3.fromRGB(100,255,100)
-            )
-
+            debugPrint("Selected combination:", potion .. " " .. tier)
+            setStatus(string.format("Selected: %s %s", potion, tier), Color3.fromRGB(100,255,100))
         else
-
-            setStatus(
-                "Select potion & tier",
-                Color3.fromRGB(150,150,200)
-            )
+            setStatus("Select potion & tier", Color3.fromRGB(150,150,200))
         end
     end)
 end
 
 -- Tier buttons
-
 for name, data in pairs(gui.TierRadios) do
-
     data.radio.MouseButton1Click:Connect(function()
-
         clearRadios(gui.TierRadios)
-
         data.circle.Visible = true
-
-        debugPrint(
-            "Selected tier:",
-            name
-        )
-
+        debugPrint("Selected tier:", name)
         updatePotionCountDisplay()
         updateCashDisplay()
         updateLowerTierDisplay()
-
         local potion = getSelectedPotion()
         local tier = getSelectedTier()
-
         if potion and tier then
-
-            debugPrint(
-                "Selected combination:",
-                potion .. " " .. tier
-            )
-
-            setStatus(
-                string.format(
-                    "Selected: %s %s",
-                    potion,
-                    tier
-                ),
-                Color3.fromRGB(100,255,100)
-            )
-
+            debugPrint("Selected combination:", potion .. " " .. tier)
+            setStatus(string.format("Selected: %s %s", potion, tier), Color3.fromRGB(100,255,100))
         else
-
-            setStatus(
-                "Select potion & tier",
-                Color3.fromRGB(150,150,200)
-            )
+            setStatus("Select potion & tier", Color3.fromRGB(150,150,200))
         end
     end)
 end
@@ -1515,24 +995,12 @@ end
 -- ========== ENABLE TOGGLE ==========
 
 gui.EnableCheckbox.MouseButton1Click:Connect(function()
-
-    autoEnabled =
-        toggleCheckbox(
-            gui.EnableCheckbox,
-            gui.EnableCheckmark
-        )
-
-    debugPrint(
-        "Auto enabled:",
-        autoEnabled
-    )
+    autoEnabled = toggleCheckbox(gui.EnableCheckbox, gui.EnableCheckmark)
+    debugPrint("Auto enabled:", autoEnabled)
 
     if autoEnabled then
-
         isBrewing = false
         brewedCount = 0
-
-        -- Fresh debug scan when starting
         debugPrint("========== STARTUP CHECK ==========")
         debugCash()
         debugInventory()
@@ -1540,72 +1008,57 @@ gui.EnableCheckbox.MouseButton1Click:Connect(function()
         debugPotionService()
         debugPrint("========== END STARTUP CHECK ==========")
 
-        setStatus(
-            "🟢 Auto Brew & Claim ENABLED",
-            Color3.fromRGB(100,255,100)
-        )
-
+        setStatus("🟢 Auto Brew & Claim ENABLED", Color3.fromRGB(100,255,100))
         updateCashDisplay()
         updatePotionCountDisplay()
         updateLowerTierDisplay()
 
-        local countText =
-            gui.CountBox.Text:match("%d+")
-            or "0"
-
-        targetCount =
-            tonumber(countText)
-            or 0
-
-        debugPrint(
-            "Target brew count:",
-            targetCount
-        )
+        local countText = gui.CountBox.Text:match("%d+") or "0"
+        targetCount = tonumber(countText) or 0
+        debugPrint("Target brew count:", targetCount)
 
         coroutine.wrap(autoLoop)()
-
     else
-
         isBrewing = false
+        setStatus("🔴 Auto Brew & Claim DISABLED", Color3.fromRGB(255,100,100))
+        gui.TimerLabel.Text = "⏱️ Brewing: 0:00 / 0:00"
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(200,200,200)
+    end
+end)
 
-        setStatus(
-            "🔴 Auto Brew & Claim DISABLED",
-            Color3.fromRGB(255,100,100)
-        )
+-- ========== NEW: X BUTTON TERMINATION ==========
 
-        gui.TimerLabel.Text =
-            "⏱️ Brewing: 0:00 / 0:00"
-
-        gui.TimerLabel.TextColor3 =
-            Color3.fromRGB(200,200,200)
+gui.CloseButton.MouseButton1Click:Connect(function()
+    if autoEnabled or isBrewing then
+        autoEnabled = false
+        isBrewing = false
+        setStatus("⏹️ Script terminated (X)", Color3.fromRGB(255,100,100))
+        gui.EnableCheckmark.Visible = false
+        gui.EnableCheckbox.BackgroundColor3 = Color3.fromRGB(60,60,80)
+        gui.TimerLabel.Text = "⏱️ Terminated"
+        gui.TimerLabel.TextColor3 = Color3.fromRGB(255,100,100)
+        print("[AUTO BREW] Script terminated by X button.")
+    else
+        print("[AUTO BREW] Script is not active; nothing to terminate.")
     end
 end)
 
 -- ========== DRAG FUNCTIONALITY ==========
 
 -- Toggle icon
-
 do
-
     local dragging = false
     local dragInput = nil
     local dragStart = nil
     local startPos = nil
 
     gui.ToggleFrame.InputBegan:Connect(function(input)
-
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = gui.ToggleFrame.Position
-
             input.Changed:Connect(function()
-
-                if input.UserInputState
-                    == Enum.UserInputState.End then
-
+                if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
                 end
             end)
@@ -1613,57 +1066,38 @@ do
     end)
 
     gui.ToggleFrame.InputChanged:Connect(function(input)
-
-        if input.UserInputType
-            == Enum.UserInputType.MouseMovement
-            or input.UserInputType
-            == Enum.UserInputType.Touch then
-
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
 
     game:GetService("UserInputService").InputChanged:Connect(function(input)
-
         if input == dragInput and dragging then
-
-            local delta =
-                input.Position - dragStart
-
-            gui.ToggleFrame.Position =
-                UDim2.new(
-                    startPos.X.Scale,
-                    startPos.X.Offset + delta.X,
-                    startPos.Y.Scale,
-                    startPos.Y.Offset + delta.Y
-                )
+            local delta = input.Position - dragStart
+            gui.ToggleFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
 -- Main GUI
-
 do
-
     local dragging = false
     local dragInput = nil
     local dragStart = nil
     local startPos = nil
 
     gui.MainFrame.InputBegan:Connect(function(input)
-
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = gui.MainFrame.Position
-
             input.Changed:Connect(function()
-
-                if input.UserInputState
-                    == Enum.UserInputState.End then
-
+                if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
                 end
             end)
@@ -1671,30 +1105,20 @@ do
     end)
 
     gui.MainFrame.InputChanged:Connect(function(input)
-
-        if input.UserInputType
-            == Enum.UserInputType.MouseMovement
-            or input.UserInputType
-            == Enum.UserInputType.Touch then
-
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
 
     game:GetService("UserInputService").InputChanged:Connect(function(input)
-
         if input == dragInput and dragging then
-
-            local delta =
-                input.Position - dragStart
-
-            gui.MainFrame.Position =
-                UDim2.new(
-                    startPos.X.Scale,
-                    startPos.X.Offset + delta.X,
-                    startPos.Y.Scale,
-                    startPos.Y.Offset + delta.Y
-                )
+            local delta = input.Position - dragStart
+            gui.MainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
@@ -1705,51 +1129,23 @@ updateCashDisplay()
 updatePotionCountDisplay()
 updateLowerTierDisplay()
 
-setStatus(
-    "Select potion & tier",
-    Color3.fromRGB(150,150,200)
-)
+setStatus("Select potion & tier", Color3.fromRGB(150,150,200))
 
 if claimPotionEvent then
-
-    print(
-        "✅ Auto Brew & Claim: ClaimPotion event found."
-    )
-
-    debugPrint(
-        "ClaimPotion:",
-        claimPotionEvent:GetFullName()
-    )
-
-    debugPrint(
-        "ClaimPotion Class:",
-        claimPotionEvent.ClassName
-    )
-
+    print("✅ Auto Brew & Claim: ClaimPotion event found.")
+    debugPrint("ClaimPotion:", claimPotionEvent:GetFullName())
+    debugPrint("ClaimPotion Class:", claimPotionEvent.ClassName)
 else
-
-    warn(
-        "⚠️ Auto Brew & Claim: ClaimPotion event NOT found!"
-    )
-
-    setStatus(
-        "⚠️ Event not found!",
-        Color3.fromRGB(255,50,50)
-    )
+    warn("⚠️ Auto Brew & Claim: ClaimPotion event NOT found!")
+    setStatus("⚠️ Event not found!", Color3.fromRGB(255,50,50))
 end
 
--- ========== INSERT SCREEN GUIS ==========
+-- Insert GUIs
+gui.ToggleScreen.Parent = player:WaitForChild("PlayerGui")
+gui.ScreenGui.Parent = player:WaitForChild("PlayerGui")
 
-gui.ToggleScreen.Parent =
-    player:WaitForChild("PlayerGui")
+debugPrint("GUI inserted into PlayerGui.")
+debugPrint("Auto Brew debug script initialized successfully.")
 
-gui.ScreenGui.Parent =
-    player:WaitForChild("PlayerGui")
-
-debugPrint(
-    "GUI inserted into PlayerGui."
-)
-
-debugPrint(
-    "Auto Brew debug script initialized successfully."
-)
+print("[AUTO BREW] Click the ✕ button on the GUI to terminate the script.")
+[file content end]
