@@ -1,13 +1,21 @@
 --catch and tame : potion only
 
---[[    Auto Brew & Claim GUI    ]]
+--[[
+    Auto Brew & Claim GUI
+]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Ensure player is valid
 local player = Players.LocalPlayer
+if not player then
+    warn("Waiting for LocalPlayer...")
+    player = Players:WaitForChild("LocalPlayer")
+end
 
 -- ========== CONFIGURATION ==========
-local TARGET_GAME_ID = 96645548064314 -- Set to specific GameId if you want to restrict.or nil for every game
+local TARGET_GAME_ID = 96645548064314 -- Set to specific GameId to restrict.or nil for every game.
 
 -- Startup message
 print("[AUTO BREW] Script is running...")
@@ -267,11 +275,11 @@ local function createGUI()
     mainFrame.BorderColor3 = Color3.fromRGB(100, 100, 120)
     mainFrame.Parent = screenGui
 
-    -- NEW: X button (close/terminate)
+    -- X button (terminate)
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 24, 0, 24)
-    closeButton.Position = UDim2.new(1, -28, 0, 4) -- top right corner
+    closeButton.Position = UDim2.new(1, -28, 0, 4)
     closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
     closeButton.BackgroundTransparency = 0.3
     closeButton.BorderSizePixel = 1
@@ -280,6 +288,7 @@ local function createGUI()
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeButton.TextSize = 18
     closeButton.Font = Enum.Font.GothamBold
+    closeButton.ZIndex = 2
     closeButton.Parent = mainFrame
 
     -- Title
@@ -608,7 +617,7 @@ local function createGUI()
         ToggleFrame = toggleFrame,
         ScreenGui = screenGui,
         MainFrame = mainFrame,
-        CloseButton = closeButton,      -- NEW
+        CloseButton = closeButton,
         EnableCheckbox = enableCheckbox,
         EnableCheckmark = enableCheckmark,
         CountBox = countBox,
@@ -1026,7 +1035,7 @@ gui.EnableCheckbox.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== NEW: X BUTTON TERMINATION ==========
+-- ========== X BUTTON TERMINATION ==========
 
 gui.CloseButton.MouseButton1Click:Connect(function()
     if autoEnabled or isBrewing then
@@ -1141,11 +1150,11 @@ else
 end
 
 -- Insert GUIs
-gui.ToggleScreen.Parent = player:WaitForChild("PlayerGui")
-gui.ScreenGui.Parent = player:WaitForChild("PlayerGui")
+local playerGui = player:WaitForChild("PlayerGui")
+gui.ToggleScreen.Parent = playerGui
+gui.ScreenGui.Parent = playerGui
 
 debugPrint("GUI inserted into PlayerGui.")
 debugPrint("Auto Brew debug script initialized successfully.")
 
-print("[AUTO BREW] Click the ✕ button on the GUI to terminate the script.")
-[file content end]
+print("[AUTO BREW] Click the ⚗️ flask icon to open the menu, then use the ✕ button to terminate.")
